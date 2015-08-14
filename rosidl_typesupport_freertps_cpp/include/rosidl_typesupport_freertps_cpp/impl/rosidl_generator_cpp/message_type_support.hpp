@@ -1,4 +1,4 @@
-// Copyright 2014-2015 Open Source Robotics Foundation, Inc.
+// Copyright 2015 Open Source Robotics Foundation, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This header contains the opensplice specific implementation
+// This header contains the freertps specific implementation
 // of the <rosidl_generator_cpp/message_type_support_decl.hpp> header.
 
-#if 0
 #ifndef __rosidl_generator_cpp__message_type_support__hpp__
 #define __rosidl_generator_cpp__message_type_support__hpp__
 
@@ -24,18 +23,18 @@
 // Provides the declaration of the function
 // rosidl_generator_cpp::get_message_type_support_handle.
 #include <rosidl_generator_cpp/message_type_support_decl.hpp>
-// Provides visibility macros like ROSIDL_TYPESUPPORT_OPENSPLICE_CPP_PUBLIC.
-#include <rosidl_typesupport_opensplice_cpp/visibility_control.h>
+// Provides visibility macros like ROSIDL_TYPESUPPORT_FREERTPS_CPP_PUBLIC.
+#include <rosidl_typesupport_freertps_cpp/visibility_control.h>
 
-namespace rosidl_typesupport_opensplice_cpp
+namespace rosidl_typesupport_freertps_cpp
 {
 
 // This is implemented in the shared library provided by this package.
 template<typename T>
-ROSIDL_TYPESUPPORT_OPENSPLICE_CPP_PUBLIC
-const rosidl_message_type_support_t * get_message_type_support_handle_opensplice();
+ROSIDL_TYPESUPPORT_FREERTPS_CPP_PUBLIC
+const rosidl_message_type_support_t * get_message_type_support_handle_freertps();
 
-}  // namespace rosidl_typesupport_opensplice_cpp
+}  // namespace rosidl_typesupport_freertps_cpp
 
 namespace rosidl_generator_cpp
 {
@@ -50,10 +49,9 @@ const rosidl_message_type_support_t * get_message_type_support_handle()
   // message library. This is intentional to allow the linker to pick the
   // correct implementation specific message library when being over linked
   // with multiple implementation options.
-  return rosidl_typesupport_opensplice_cpp::get_message_type_support_handle_opensplice<T>();
+  return rosidl_typesupport_freertps_cpp::get_message_type_support_handle_freertps<T>();
 }
 
 }  // namespace rosidl_generator_cpp
 
 #endif  // __rosidl_generator_cpp__message_type_support__hpp__
-#endif

@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This header contains the opensplice specific implementation
+// This header contains the freertps specific implementation
 // of the <rosidl_generator_cpp/service_type_support_decl.hpp> header.
 
-#if 0
 #ifndef __rosidl_generator_cpp__service_type_support__hpp__
 #define __rosidl_generator_cpp__service_type_support__hpp__
 
@@ -24,10 +23,10 @@
 // Provides the declaration of the function
 // rosidl_generator_cpp::get_service_type_support_handle.
 #include <rosidl_generator_cpp/service_type_support_decl.hpp>
-// Provides visibility macros like ROSIDL_TYPESUPPORT_OPENSPLICE_CPP_PUBLIC.
-#include <rosidl_typesupport_opensplice_cpp/visibility_control.h>
+// Provides visibility macros like ROSIDL_TYPESUPPORT_FREERTPS_CPP_PUBLIC.
+#include <rosidl_typesupport_freertps_cpp/visibility_control.h>
 
-namespace rosidl_typesupport_opensplice_cpp
+namespace rosidl_typesupport_freertps_cpp
 {
 
 template<typename T>
@@ -41,10 +40,10 @@ class TemplateDataWriter;
 
 // This is implemented in the shared library provided by this package.
 template<typename T>
-ROSIDL_TYPESUPPORT_OPENSPLICE_CPP_PUBLIC
-const rosidl_service_type_support_t * get_service_type_support_handle_opensplice();
+ROSIDL_TYPESUPPORT_FREERTPS_CPP_PUBLIC
+const rosidl_service_type_support_t * get_service_type_support_handle_freertps();
 
-}  // namespace rosidl_typesupport_opensplice_cpp
+}  // namespace rosidl_typesupport_freertps_cpp
 
 namespace rosidl_generator_cpp
 {
@@ -59,10 +58,9 @@ const rosidl_service_type_support_t * get_service_type_support_handle()
   // service library. This is intentional to allow the linker to pick the
   // correct implementation specific service library when being over linked
   // with multiple implementation options.
-  return rosidl_typesupport_opensplice_cpp::get_service_type_support_handle_opensplice<T>();
+  return rosidl_typesupport_freertps_cpp::get_service_type_support_handle_freertps<T>();
 }
 
 }  // namespace rosidl_generator_cpp
 
 #endif  // __rosidl_generator_cpp__service_type_support__hpp__
-#endif

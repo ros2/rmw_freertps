@@ -48,7 +48,7 @@ _create_type_name(
          "::" + sep + "::dds_::" + callbacks->message_name + "_";
 }
 
-using namespace rosidl_typesupport_opensplice_cpp::impl;
+//using namespace rosidl_typesupport_freertps_cpp::impl;
 
 // The extern "C" here enforces that overloading is not used.
 extern "C"
@@ -202,7 +202,7 @@ struct OpenSpliceStaticServiceInfo
 const char *
 rmw_get_implementation_identifier()
 {
-  return opensplice_cpp_identifier;
+  return freertps_cpp_identifier;
 }
 
 rmw_ret_t
@@ -223,6 +223,7 @@ rmw_node_t *
 rmw_create_node(const char * name, size_t domain_id)
 {
   (void)name;
+  (void)domain_id;
   /*
 
   DDS::DomainParticipantFactory_var dp_factory = DDS::DomainParticipantFactory::get_instance();
@@ -293,14 +294,19 @@ rmw_create_node(const char * name, size_t domain_id)
   builtin_subscription_datareader->set_listener(subscriber_listener, DDS::DATA_AVAILABLE_STATUS);
   */
 
+  /*
   rmw_node_t * node = nullptr;
   node = rmw_node_allocate();
   if (!node) {
     RMW_SET_ERROR_MSG("failed to allocate rmw_node_t");
-    goto fail;
+    return nullptr;
+    //goto fail;
   }
   node->implementation_identifier = freertps_cpp_identifier;
   node->data = nullptr;
+  */
+  RMW_SET_ERROR_MSG("not yet implemented");
+  return nullptr;
 
   /*
   buf = rmw_allocate(sizeof(OpenSpliceStaticNodeInfo));
@@ -432,6 +438,8 @@ rmw_create_publisher(
     type_support->typesupport_identifier, typesupport_freertps_identifier,
     return nullptr)
 
+  (void)topic_name;
+  (void)qos_profile;
   return nullptr; // TODO: not this
 
   /*
@@ -731,7 +739,11 @@ rmw_create_subscription(
     type support,
     type_support->typesupport_identifier, typesupport_freertps_identifier,
     return nullptr)
+
   RMW_SET_ERROR_MSG("not yet implemented");
+  (void)topic_name;
+  (void)qos_profile;
+  (void)ignore_local_publications;
   return nullptr;
 
   /*
@@ -1148,6 +1160,11 @@ rmw_wait(
   rmw_time_t * wait_timeout)
 {
   RMW_SET_ERROR_MSG("rmw_wait not implemented");
+  (void)subscriptions;
+  (void)services;
+  (void)clients;
+  (void)wait_timeout;
+  (void)guard_conditions;
   return RMW_RET_ERROR;
   /*
   DDS::WaitSet waitset;
@@ -1379,6 +1396,9 @@ rmw_create_client(
   const char * service_name)
 {
   RMW_SET_ERROR_MSG("not yet implemented");
+  (void)node;
+  (void)type_support;
+  (void)service_name;
   return nullptr;
   /*
   if (!node) {
@@ -1483,7 +1503,8 @@ rmw_ret_t
 rmw_destroy_client(rmw_client_t * client)
 {
   RMW_SET_ERROR_MSG("not yet implemented");
-  return nullptr;
+  (void)client;
+  return RMW_RET_ERROR;
   /*
   if (!client) {
     RMW_SET_ERROR_MSG("client handle is null");
@@ -1526,7 +1547,10 @@ rmw_send_request(
   int64_t * sequence_id)
 {
   RMW_SET_ERROR_MSG("not yet implemented");
-  return nullptr;
+  (void)client;
+  (void)ros_request;
+  (void)sequence_id;
+  return RMW_RET_ERROR;
   /*
   if (!client) {
     RMW_SET_ERROR_MSG("client handle is null");
@@ -1572,6 +1596,10 @@ rmw_take_response(const rmw_client_t * client, void * ros_request_header,
   void * ros_response, bool * taken)
 {
   RMW_SET_ERROR_MSG("not yet implemented");
+  (void)client;
+  (void)ros_request_header;
+  (void)ros_response;
+  (void)taken;
   return RMW_RET_ERROR;
   /*
   if (!client) {
@@ -1629,6 +1657,9 @@ rmw_create_service(
   const char * service_name)
 {
   RMW_SET_ERROR_MSG("not yet implemented");
+  (void)node;
+  (void)type_support;
+  (void)service_name;
   return nullptr;
   /*
   if (!node) {
@@ -1725,6 +1756,7 @@ rmw_ret_t
 rmw_destroy_service(rmw_service_t * service)
 {
   RMW_SET_ERROR_MSG("not yet implemented");
+  (void)service;
   return RMW_RET_ERROR;
   /*
   if (!service) {
@@ -1766,6 +1798,10 @@ rmw_take_request(
   void * ros_request_header, void * ros_request, bool * taken)
 {
   RMW_SET_ERROR_MSG("not yet implemented");
+  (void)service;
+  (void)ros_request_header;
+  (void)ros_request;
+  (void)taken;
   return RMW_RET_ERROR;
   /*
   if (!service) {
@@ -1822,6 +1858,9 @@ rmw_send_response(
   void * ros_request_header, void * ros_response)
 {
   RMW_SET_ERROR_MSG("not yet implemented");
+  (void)service;
+  (void)ros_request_header;
+  (void)ros_response;
   return RMW_RET_ERROR;
   /*
   if (!service) {
@@ -1872,6 +1911,7 @@ void
 destroy_topic_names_and_types(
   rmw_topic_names_and_types_t * topic_names_and_types)
 {
+  (void)topic_names_and_types;
   return; // not yet implemented
   /*
   if (topic_names_and_types->topic_count) {
@@ -1900,6 +1940,8 @@ rmw_get_topic_names_and_types(
   rmw_topic_names_and_types_t * topic_names_and_types)
 {
   RMW_SET_ERROR_MSG("not yet implemented");
+  (void)node;
+  (void)topic_names_and_types;
   return RMW_RET_ERROR;
   /*
   if (!node) {
@@ -2020,6 +2062,7 @@ rmw_destroy_topic_names_and_types(
   rmw_topic_names_and_types_t * topic_names_and_types)
 {
   RMW_SET_ERROR_MSG("not yet implemented");
+  (void)topic_names_and_types;
   return RMW_RET_ERROR;
   /*
   if (!topic_names_and_types) {
