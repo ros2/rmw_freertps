@@ -9,10 +9,10 @@ endif()
 find_package(ament_cmake REQUIRED)
 
 #find_package(opensplice_cmake_module REQUIRED)
-find_package(FreeRTPS MODULE)
-if(NOT FreeRTPS_FOUND)
-  ament_package()
-  message(WARNING "Could not find FreeRTPS - skipping '${PROJECT_NAME}'")
+find_package(freertps REQUIRED)
+if(NOT freertps_FOUND)
+  #ament_package()
+  message(WARNING "Could not find freertps - not going to configure any more stuff in '${PROJECT_NAME}'")
   return()
 endif()
 
@@ -20,17 +20,17 @@ find_package(rmw REQUIRED)
 find_package(rosidl_generator_cpp REQUIRED)
 find_package(rosidl_typesupport_freertps_cpp REQUIRED)
 
-ament_export_definitions(${FreeRTPS_DEFINITIONS})
+ament_export_definitions(${freertps_DEFINITIONS})
 ament_export_dependencies(rmw rosidl_generator_cpp rosidl_typesupport_freertps_cpp)
-ament_export_include_directories(${FreeRTPS_INCLUDE_DIRS})
+ament_export_include_directories(${freertps_INCLUDE_DIRS})
 
-link_directories(${FreeRTPS_LIBRARY_DIRS})
+link_directories(${freertps_LIBRARY_DIRS})
 add_library(rmw_freertps_cpp SHARED src/functions.cpp)
 ament_target_dependencies(rmw_freertps_cpp
   "rmw"
   "rosidl_generator_cpp"
   "rosidl_typesupport_freertps_cpp"
-  "FreeRTPS")
+  "freertps")
 # On Windows this adds the RMW_BUILDING_DLL definition.
 # On Unix (GCC or Clang) it hides the symbols with -fvisibility=hidden.
 configure_rmw_library(rmw_freertps_cpp)
@@ -40,7 +40,7 @@ if(WIN32)
       PRIVATE "ROSIDL_TYPESUPPORT_FREERTPS_CPP_BUILDING_DLL")
 endif()
 
-ament_export_libraries(rmw_freertps_cpp ${FreeRTPS_LIBRARIES})
+ament_export_libraries(rmw_freertps_cpp ${freertps_LIBRARIES})
 
 register_rmw_implementation("rosidl_typesupport_freertps_cpp")
 

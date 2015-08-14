@@ -8,10 +8,10 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 
-find_package(FreeRTPS MODULE)
-if(NOT FreeRTPS_FOUND)
+find_package(freertps MODULE)
+if(NOT freertps_FOUND)
   ament_package()
-  message(WARNING "Could not find FreeRTPS - skipping '${PROJECT_NAME}'")
+  message(FATAL_ERROR "Could not find freertps - skipping '${PROJECT_NAME}'")
   return()
 endif()
 

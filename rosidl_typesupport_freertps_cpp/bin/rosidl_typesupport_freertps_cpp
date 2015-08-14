@@ -21,7 +21,7 @@ def is_valid_file(parser, file_name):
 
 def main(argv=sys.argv[1:]):
     parser = argparse.ArgumentParser(
-        description='Generate the C++ interfaces for FreeRTPS.',
+        description='Generate the C++ interfaces for freertps.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '--generator-arguments-file',

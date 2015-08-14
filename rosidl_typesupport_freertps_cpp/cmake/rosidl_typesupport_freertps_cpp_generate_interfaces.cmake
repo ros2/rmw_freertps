@@ -88,7 +88,7 @@ foreach(_idl_file ${rosidl_generate_interfaces_IDL_FILES})
   endif()
 endforeach()
 
-# If not on Windows, disable some warnings with FreeRTPS generated code
+# If not on Windows, disable some warnings with freertps generated code
 if(NOT WIN32)
   set(_freertps_compile_flags)
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -175,7 +175,7 @@ add_custom_command(
   --dds-interface-base-path "${_dds_idl_base_path}"
   --idl-pp "${FastRTPS_IDLPP}"
   DEPENDS ${target_dependencies} ${_dds_idl_files}
-  COMMENT "Generating C++ type support for FreeRTPS"
+  COMMENT "Generating C++ type support for freertps"
   VERBATIM
 )
 
@@ -222,7 +222,7 @@ else()
 
 endif()
 
-link_directories(${FreeRTPS_LIBRARY_DIRS})
+link_directories(${freertps_LIBRARY_DIRS})
 add_library(${rosidl_generate_interfaces_TARGET}${_target_suffix} SHARED
   ${_generated_msg_files}
   ${_generated_external_msg_files}
@@ -259,7 +259,7 @@ foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
 endforeach()
 ament_target_dependencies(
   ${rosidl_generate_interfaces_TARGET}${_target_suffix}
-  "FreeRTPS"
+  "freertps"
   "rosidl_typesupport_freertps_cpp")
 
 add_dependencies(
@@ -280,6 +280,6 @@ if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
   )
 endif()
 
-ament_export_libraries(${rosidl_generate_interfaces_TARGET}${_target_suffix} ${FreeRTPS_LIBRARIES})
+ament_export_libraries(${rosidl_generate_interfaces_TARGET}${_target_suffix} ${freertps_LIBRARIES})
 
 ament_export_include_directories(include)
