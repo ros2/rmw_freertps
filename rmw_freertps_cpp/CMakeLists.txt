@@ -8,12 +8,9 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 
-#find_package(opensplice_cmake_module REQUIRED)
 find_package(freertps REQUIRED)
 if(NOT freertps_FOUND)
-  #ament_package()
-  message(WARNING "Could not find freertps - not going to configure any more stuff in '${PROJECT_NAME}'")
-  return()
+  message(FATAL_ERROR "Could not find freertps - not going to configure any more stuff in '${PROJECT_NAME}'")
 endif()
 
 find_package(rmw REQUIRED)

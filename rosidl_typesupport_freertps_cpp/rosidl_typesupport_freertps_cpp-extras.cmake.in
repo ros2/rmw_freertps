@@ -8,7 +8,7 @@ ament_register_extension(
   "rosidl_typesupport_freertps_cpp"
   "rosidl_typesupport_freertps_cpp_generate_interfaces.cmake")
 
-find_package(freertps MODULE)
+find_package(freertps REQUIRED)
 if(NOT freertps_FOUND)
   message(FATAL_ERROR "Could not find freertps")
 endif()
