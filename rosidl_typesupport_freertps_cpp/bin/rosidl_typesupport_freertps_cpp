@@ -27,14 +27,10 @@ def main(argv=sys.argv[1:]):
         '--generator-arguments-file',
         required=True,
         help='The location of the file containing the generator arguments')
-    parser.add_argument(
-        '--dds-interface-base-path',
-        required=True,
-        help='The base location of the DDS interface files')
-    parser.add_argument(
-        '--idl-pp',
-        required=True,
-        help='The location of the IDL preprocessor')
+    #parser.add_argument(
+    #    '--dds-interface-base-path',
+    #    required=True,
+    #    help='The base location of the DDS interface files')
     args = parser.parse_args(argv)
 
     generator_args = read_generator_arguments(args.generator_arguments_file)
@@ -49,10 +45,9 @@ def main(argv=sys.argv[1:]):
     return generate_dds_freertps_cpp(
         generator_args['package_name'],
         generator_args.get('additional_files', []),
-        args.dds_interface_base_path,
+        #args.dds_interface_base_path,
         generator_args.get('ros_interface_dependencies', []),
-        generator_args['output_dir'],
-        args.idl_pp,
+        generator_args['output_dir']
     )
 
 

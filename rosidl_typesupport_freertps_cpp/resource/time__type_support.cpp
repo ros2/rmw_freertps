@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "rosidl_typesupport_opensplice_cpp/time__type_support.hpp"
+#include "rosidl_typesupport_freertps_cpp/time__type_support.hpp"
 
 namespace builtin_interfaces
 {
 namespace msg
 {
-namespace typesupport_opensplice_cpp
+namespace typesupport_freertps_cpp
 {
 
+/*
 void convert_ros_message_to_dds(
   const builtin_interfaces::msg::Time & ros_message,
   DDS::Time_t & dds_message)
@@ -36,6 +37,7 @@ void convert_dds_message_to_ros(
   ros_message.sec = dds_message.sec;
   ros_message.nanosec = dds_message.nanosec;
 }
+*/
 
 }  // namespace typesupport_opensplice_cpp
 }  // namespace msg

@@ -24,10 +24,9 @@ from rosidl_parser import parse_service_file
 from rosidl_parser import validate_field_types
 
 
-def generate_dds_opensplice_cpp(
-    pkg_name, dds_interface_files, dds_interface_base_path, deps, output_basepath, idl_pp
-):
-    include_dirs = [dds_interface_base_path]
+def generate_dds_freertps_cpp(pkg_name, dds_interface_files, 
+                              deps, output_basepath):
+    include_dirs = [] #dds_interface_base_path]
     for dep in deps:
         # only take the first : for separation, as Windows follows with a C:\
         dep_parts = dep.split(':', 1)
@@ -37,9 +36,15 @@ def generate_dds_opensplice_cpp(
             os.path.dirname(os.path.dirname(os.path.normpath(idl_path))))
         if idl_base_path not in include_dirs:
             include_dirs.append(idl_base_path)
-    if 'OSPL_TMPL_PATH' in os.environ:
-        include_dirs.append(os.environ['OSPL_TMPL_PATH'])
+    #if 'OSPL_TMPL_PATH' in os.environ:
+    #    include_dirs.append(os.environ['OSPL_TMPL_PATH'])
 
+    print("generate_dds_freertps_cpp:")
+    print("pkg_name: [%s]" % pkg_name)
+    print("output_basepath: [%s]" % output_basepath)
+    print("dds_interface_files:")
+    print(dds_interface_files)
+    #print("dds_interface_base_path: [%s]" % dds_interface_base_path)
     for idl_file in dds_interface_files:
         assert os.path.exists(idl_file), 'Could not find IDL file: ' + idl_file
 
@@ -55,7 +60,10 @@ def generate_dds_opensplice_cpp(
         except FileExistsError:
             pass
 
-        cmd = [idl_pp]
+        print("  idl_file: [%s]" % idl_file)
+        print("    output_path: [%s]" % output_path)
+
+        '''
         for include_dir in include_dirs:
             cmd += ['-I', include_dir]
         cmd += [
@@ -64,17 +72,19 @@ def generate_dds_opensplice_cpp(
             '-d', output_path,
             idl_file
         ]
+        print("cmd: [%s]" % cmd)
         if os.name == 'nt':
             cmd[-1:-1] = [
                 '-P',
-                'ROSIDL_TYPESUPPORT_OPENSPLICE_CPP_PUBLIC_%s,%s' %
-                (pkg_name, '%s/msg/dds_opensplice/visibility_control.h' % pkg_name)]
+                'ROSIDL_TYPESUPPORT_FREERTPS_CPP_PUBLIC_%s,%s' %
+                (pkg_name, '%s/msg/dds_freertps/visibility_control.h' % pkg_name)]
         subprocess.check_call(cmd)
 
         # modify generated code to compile with Visual Studio 2015
         msg_name = os.path.splitext(os.path.basename(idl_file))[0]
         dcps_impl_h_filename = os.path.join(output_path, '%sDcps_impl.h' % msg_name)
         _modify(dcps_impl_h_filename, msg_name, _copy_constructor_and_assignment_operator)
+        '''
 
     return 0
 
@@ -102,7 +112,7 @@ def _copy_constructor_and_assignment_operator(lines, msg_name):
     assert False, 'Failed to find insertion point'
 
 
-def generate_typesupport_opensplice_cpp(args):
+def generate_typesupport_freertps_cpp(args):
     template_dir = args['template_dir']
     mapping_msgs = {
         os.path.join(template_dir, 'msg__type_support.hpp.template'): '%s__type_support.hpp',
@@ -127,7 +137,7 @@ def generate_typesupport_opensplice_cpp(args):
     functions = {
         'get_header_filename_from_msg_name': convert_camel_case_to_lower_case_underscore,
     }
-    # generate_dds_opensplice_cpp() and therefore the make target depend on the additional files
+    # generate_dds_freertps_cpp() and therefore the make target depend on the additional files
     # therefore they must be listed here even if the generated type support files are independent
     latest_target_timestamp = get_newest_modification_time(
         args['target_dependencies'] + args.get('additional_files', []))
@@ -140,7 +150,7 @@ def generate_typesupport_opensplice_cpp(args):
             subfolder = os.path.basename(os.path.dirname(idl_file))
             for template_file, generated_filename in mapping_msgs.items():
                 generated_file = os.path.join(
-                    args['output_dir'], subfolder, 'dds_opensplice', generated_filename %
+                    args['output_dir'], subfolder, 'dds_freertps', generated_filename %
                     convert_camel_case_to_lower_case_underscore(spec.base_type.type))
 
                 data = {'spec': spec, 'subfolder': subfolder}
@@ -154,7 +164,7 @@ def generate_typesupport_opensplice_cpp(args):
             validate_field_types(spec, known_msg_types)
             for template_file, generated_filename in mapping_srvs.items():
                 generated_file = os.path.join(
-                    args['output_dir'], 'srv', 'dds_opensplice', generated_filename %
+                    args['output_dir'], 'srv', 'dds_freertps', generated_filename %
                     convert_camel_case_to_lower_case_underscore(spec.srv_name))
 
                 data = {'spec': spec}
