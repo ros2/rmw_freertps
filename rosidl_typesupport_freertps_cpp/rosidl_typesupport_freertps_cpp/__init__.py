@@ -113,6 +113,9 @@ def _copy_constructor_and_assignment_operator(lines, msg_name):
 
 
 def generate_typesupport_freertps_cpp(args):
+    print("freertps generate_typesupport_freertps_cpp() args:")
+    print(args)
+    print("==end==")
     template_dir = args['template_dir']
     mapping_msgs = {
         os.path.join(template_dir, 'msg__type_support.hpp.template'): '%s__type_support.hpp',
