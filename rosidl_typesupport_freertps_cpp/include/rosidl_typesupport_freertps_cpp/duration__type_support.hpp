@@ -15,7 +15,7 @@
 #ifndef __rosidl_typesupport_freertps_cpp__duration__type_support__h__
 #define __rosidl_typesupport_freertps_cpp__duration__type_support__h__
 
-#include <ccpp_dds_dcps.h>
+//#include <ccpp_dds_dcps.h>
 
 #include <rosidl_typesupport_freertps_cpp/visibility_control.h>
 

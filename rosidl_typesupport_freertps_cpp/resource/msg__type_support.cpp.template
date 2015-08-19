@@ -74,8 +74,11 @@ namespace typesupport_freertps_cpp
 __dds_msg_type_prefix = "{}::{}::dds_::{}_".format(
   spec.base_type.pkg_name, subfolder, spec.base_type.type)
 }@
+
+#if 0
 typedef @(__dds_msg_type_prefix) __dds_msg_type;
 typedef @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) __ros_msg_type;
+#endif
 
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
 const char *
@@ -89,6 +92,7 @@ register_type__@(spec.base_type.type)(
   if (!type_name) {
     return "type name handle is null";
   }
+#if 0
   DDS::DomainParticipant * participant =
     static_cast<DDS::DomainParticipant *>(untyped_participant);
 
@@ -112,8 +116,11 @@ register_type__@(spec.base_type.type)(
     default:
       return "@(__dds_msg_type_prefix)TypeSupport.register_type: unknown return code";
   }
+#endif
+  return "not yet implemented";
 }
 
+#if 0
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
 void
 convert_ros_message_to_dds(const __ros_msg_type & ros_message, __dds_msg_type & dds_message)
@@ -160,6 +167,7 @@ convert_ros_message_to_dds(const __ros_msg_type & ros_message, __dds_msg_type & 
 
 @[end for]@
 }
+#endif
 
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
 const char *
@@ -167,6 +175,9 @@ publish__@(spec.base_type.type)(
   void * untyped_topic_writer,
   const void * untyped_ros_message)
 {
+  (void)untyped_topic_writer;
+  (void)untyped_ros_message;
+#if 0
   DDS::DataWriter * topic_writer = static_cast<DDS::DataWriter *>(untyped_topic_writer);
 
   const __ros_msg_type & ros_message = *(const __ros_msg_type *)untyped_ros_message;
@@ -204,8 +215,11 @@ publish__@(spec.base_type.type)(
     default:
       return "@(__dds_msg_type_prefix)DataWriter.write: unknown return code";
   }
+#endif
+  return "not yet implemented";
 }
 
+#if 0
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
 void
 convert_dds_message_to_ros(const __dds_msg_type & dds_message, __ros_msg_type & ros_message)
@@ -246,6 +260,7 @@ convert_dds_message_to_ros(const __dds_msg_type & dds_message, __ros_msg_type & 
 
 @[end for]@
 }
+#endif
 
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
 const char *
@@ -258,7 +273,11 @@ take__@(spec.base_type.type)(
   if (untyped_ros_message == 0) {
     return "invalid ros message pointer";
   };
+  (void)untyped_topic_reader;
+  (void)ignore_local_publications;
+  (void)taken;
 
+#if 0
   DDS::DataReader * topic_reader = static_cast<DDS::DataReader*>(untyped_topic_reader);
 
   @(__dds_msg_type_prefix)DataReader * data_reader =
@@ -361,20 +380,26 @@ finally:
   }
 
   return errs;
+#endif
+  return "not yet implemented";
 }
 
 static message_type_support_callbacks_t callbacks = {
   "@(spec.base_type.pkg_name)",
   "@(spec.base_type.type)",
+};
+/*
   &register_type__@(spec.base_type.type),
   &publish__@(spec.base_type.type),
   &take__@(spec.base_type.type)
 };
+*/
 
 static rosidl_message_type_support_t handle = {
   rosidl_typesupport_freertps_cpp::typesupport_freertps_identifier,
   &callbacks
 };
+
 
 }  // namespace typesupport_freertps_cpp
 

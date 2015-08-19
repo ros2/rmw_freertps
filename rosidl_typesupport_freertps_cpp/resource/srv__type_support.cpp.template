@@ -26,10 +26,12 @@
 @{res_header_file_name = get_header_filename_from_msg_name(spec.srv_name + '_Response')}@
 #include "@(spec.pkg_name)/srv/dds_freertps/@(req_header_file_name)__type_support.hpp"
 #include "@(spec.pkg_name)/srv/dds_freertps/@(res_header_file_name)__type_support.hpp"
+/*
 #include "@(spec.pkg_name)/srv/dds_freertps/ccpp_@(spec.srv_name)_Request_.h"
 #include "@(spec.pkg_name)/srv/dds_freertps/ccpp_@(spec.srv_name)_Response_.h"
 #include "@(spec.pkg_name)/srv/dds_freertps/ccpp_Sample_@(spec.srv_name)_Request_.h"
 #include "@(spec.pkg_name)/srv/dds_freertps/ccpp_Sample_@(spec.srv_name)_Response_.h"
+*/
 #include "rosidl_typesupport_freertps_cpp/identifier.hpp"
 #include "rosidl_typesupport_freertps_cpp/service_type_support.h"
 #include "rosidl_typesupport_freertps_cpp/requester.hpp"
@@ -42,6 +44,7 @@ __dds_msg_type_prefix = "{spec.pkg_name}::srv::dds_::{spec.srv_name}".format(spe
 __dds_sample_type_prefix = "{spec.pkg_name}::srv::dds_::Sample_{spec.srv_name}".format(spec=spec)
 }@
 
+#if 0
 namespace rosidl_typesupport_freertps_cpp
 {
 
@@ -589,6 +592,7 @@ static rosidl_service_type_support_t handle = {
 
 }  // namespace @(spec.pkg_name)
 
+#endif
 
 namespace rosidl_typesupport_freertps_cpp
 {
@@ -598,7 +602,8 @@ ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT
 const rosidl_service_type_support_t *
 get_service_type_support_handle_freertps<@(spec.pkg_name)::srv::@(spec.srv_name)>()
 {
-  return &@(spec.pkg_name)::srv::typesupport_freertps_cpp::handle;
+  //return &@(spec.pkg_name)::srv::typesupport_freertps_cpp::handle;
+  return nullptr; // sorry
 }
 
 }  // namespace rosidl_typesupport_freertps_cpp

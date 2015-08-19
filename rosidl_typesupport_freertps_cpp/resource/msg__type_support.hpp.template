@@ -35,6 +35,7 @@ namespace @(subfolder)
 namespace typesupport_opensplice_cpp
 {
 
+/*
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_PUBLIC_@(spec.base_type.pkg_name)
 extern void register_type__@(spec.base_type.type)(
   DDS::DomainParticipant * participant,
@@ -61,6 +62,7 @@ extern bool take__@(spec.base_type.type)(
   bool ignore_local_publications,
   void * untyped_ros_message,
   bool * taken);
+*/
 
 }  // namespace typesupport_opensplice_cpp
 

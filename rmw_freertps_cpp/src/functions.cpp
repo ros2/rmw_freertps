@@ -39,6 +39,11 @@
 
 #include <rmw/impl/cpp/macros.hpp>
 
+extern "C"
+{
+#include "freertps/freertps.h"
+}
+
 inline std::string
 _create_type_name(
   const message_type_support_callbacks_t * callbacks,
@@ -216,6 +221,7 @@ rmw_init()
   }
   */
   printf("rmw_init()\n");
+  freertps_system_init();
   return RMW_RET_OK;
 }
 
