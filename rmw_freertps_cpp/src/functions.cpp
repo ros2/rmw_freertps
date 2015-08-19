@@ -228,8 +228,13 @@ rmw_init()
 rmw_node_t *
 rmw_create_node(const char * name, size_t domain_id)
 {
-  (void)name;
-  (void)domain_id;
+  (void)name; // need to stash this somewhere
+
+  if (!frudp_part_create(domain_id))
+  {
+    RMW_SET_ERROR_MSG("failed to create freertps participant");
+    return nullptr;
+  }
   /*
 
   DDS::DomainParticipantFactory_var dp_factory = DDS::DomainParticipantFactory::get_instance();
@@ -308,11 +313,11 @@ rmw_create_node(const char * name, size_t domain_id)
     return nullptr;
     //goto fail;
   }
+  */
   node->implementation_identifier = freertps_cpp_identifier;
   node->data = nullptr;
-  */
-  RMW_SET_ERROR_MSG("not yet implemented");
-  return nullptr;
+  //RMW_SET_ERROR_MSG("not yet implemented");
+  return node;
 
   /*
   buf = rmw_allocate(sizeof(OpenSpliceStaticNodeInfo));
