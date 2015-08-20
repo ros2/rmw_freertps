@@ -15,7 +15,7 @@
 #include <limits>
 #include <stdexcept>
 
-//#include <u_instanceHandle.h>
+#include "freertps/pub.h"
 
 #include <rosidl_generator_c/message_type_support.h>
 // this is defined in the rosidl_typesupport_freertps_cpp package and
@@ -172,10 +172,11 @@ convert_ros_message_to_dds(const __ros_msg_type & ros_message, __dds_msg_type & 
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
 const char *
 publish__@(spec.base_type.type)(
-  void * untyped_topic_writer,
+  frudp_pub_t * pub,
   const void * untyped_ros_message)
 {
-  (void)untyped_topic_writer;
+  //(void)untyped_topic_writer;
+  (void)pub;
   (void)untyped_ros_message;
 #if 0
   DDS::DataWriter * topic_writer = static_cast<DDS::DataWriter *>(untyped_topic_writer);
@@ -386,11 +387,11 @@ finally:
 
 static message_type_support_callbacks_t message_type_support_callbacks = {
   "@(spec.base_type.pkg_name)",
-  "@(spec.base_type.type)"
+  "@(spec.base_type.type)",
+  &publish__@(spec.base_type.type),
 };
 /*
   &register_type__@(spec.base_type.type),
-  &publish__@(spec.base_type.type),
   &take__@(spec.base_type.type)
 };
 */

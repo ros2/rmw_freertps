@@ -42,7 +42,7 @@
 
 // hacked up temporary include, just for now as placeholder
 // the real includes will be in the auto-generated type_support.hpp
-#include "std_msgs/msg/string__struct.hpp"
+//#include "std_msgs/msg/string__struct.hpp"
 
 
 extern "C"
@@ -747,7 +747,8 @@ rmw_publish(const rmw_publisher_t * publisher, const void * ros_message)
     RMW_SET_ERROR_MSG("unable to serialize type");
     return RMW_RET_ERROR;
   }
-  //printf("about to serialize...\n");
+  printf("about to serialize...\n");
+  /*
   const std_msgs::msg::String *s = static_cast<const std_msgs::msg::String *>(ros_message);
   static char ser_buf[256];
   int s_len = (int)s->data.length();
@@ -760,8 +761,8 @@ rmw_publish(const rmw_publisher_t * publisher, const void * ros_message)
   //uint32_t rtps_string_len = strlen(&msg[4]) + 1;
   *((uint32_t *)ser_buf) = s_len + 1; // add 1 for the null char at the end
   freertps_publish(pub, (uint8_t *)ser_buf, s_len + 5);
+  */
 
-  //freertps_publish(pub_info->pub, (uint8_t *)
   return RMW_RET_OK;
   /*
   DDS::DataWriter * topic_writer = publisher_info->topic_writer;
