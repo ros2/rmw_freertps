@@ -14,8 +14,13 @@
 @
 #include <limits>
 #include <stdexcept>
+#include <cstring>
 
+extern "C"
+{
 #include "freertps/pub.h"
+#include "freertps/freertps.h"
+}
 
 #include <rosidl_generator_c/message_type_support.h>
 // this is defined in the rosidl_typesupport_freertps_cpp package and
@@ -77,8 +82,8 @@ __dds_msg_type_prefix = "{}::{}::dds_::{}_".format(
 
 #if 0
 typedef @(__dds_msg_type_prefix) __dds_msg_type;
-typedef @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) __ros_msg_type;
 #endif
+typedef @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) __ros_msg_type;
 
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
 const char *
@@ -172,16 +177,15 @@ convert_ros_message_to_dds(const __ros_msg_type & ros_message, __dds_msg_type & 
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
 const char *
 publish__@(spec.base_type.type)(
-  frudp_pub_t * pub,
-  const void * untyped_ros_message)
+  void *untyped_pub,
+  const void *untyped_ros_message)
 {
   //(void)untyped_topic_writer;
-  (void)pub;
-  (void)untyped_ros_message;
+  (void)untyped_pub;
+  const __ros_msg_type & ros_message = *(const __ros_msg_type *)untyped_ros_message;
 #if 0
   DDS::DataWriter * topic_writer = static_cast<DDS::DataWriter *>(untyped_topic_writer);
 
-  const __ros_msg_type & ros_message = *(const __ros_msg_type *)untyped_ros_message;
   __dds_msg_type dds_message;
   convert_ros_message_to_dds(ros_message, dds_message);
 
@@ -217,7 +221,25 @@ publish__@(spec.base_type.type)(
       return "@(__dds_msg_type_prefix)DataWriter.write: unknown return code";
   }
 #endif
-  return "not yet implemented";
+@[if __dds_msg_type_prefix == "std_msgs::msg::dds_::String_"]@
+  //printf(" ok to publish\n");
+  static char ser_buf[256];
+  int s_len = (int)ros_message.data.length();
+  //printf("  len = %d\n", s_len);
+  //snprintf(&ser_buf[4], sizeof(msg) - 4, "Hello World: %d", pub_count++);
+  if (s_len + 4 + 1 > (int)sizeof(ser_buf) - 5)
+    s_len = (int)sizeof(ser_buf) - 5;
+  memcpy(&ser_buf[4], &ros_message.data[0], s_len);
+  ser_buf[s_len + 5] = 0; // add a null char plz
+  //uint32_t rtps_string_len = strlen(&msg[4]) + 1;
+  *((uint32_t *)ser_buf) = s_len + 1; // add 1 for the null char at the end
+  frudp_pub_t *pub = (frudp_pub_t *)untyped_pub;
+  freertps_publish(pub, (uint8_t *)ser_buf, s_len + 5);
+  return nullptr;
+@[else]@
+  (void)ros_message;
+  return "serialization of [@(__dds_msg_type_prefix)] not yet implemented\n";
+@[end if]@
 }
 
 #if 0

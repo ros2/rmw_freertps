@@ -289,6 +289,8 @@ if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
   )
 endif()
 
+#message("freertps_LIBRARIES = ${freertps_LIBRARIES}")
 ament_export_libraries(${rosidl_generate_interfaces_TARGET}${_target_suffix} ${freertps_LIBRARIES})
+#target_link_libraries(${rosidl_generate_interfaces_TARGET}${_target_suffix} ${freertps_LIBRARIES})
 
 ament_export_include_directories(include)

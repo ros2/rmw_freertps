@@ -71,10 +71,10 @@ const char * freertps_cpp_identifier = "freertps_static";
 struct PublisherInfo
 {
   frudp_pub_t *pub;
+  const message_type_support_callbacks_t * callbacks;
   /*
   DDS::Topic * dds_topic;
   DDS::DataWriter * topic_writer;
-  const message_type_support_callbacks_t * callbacks;
   */
 };
 
@@ -464,10 +464,10 @@ rmw_create_publisher(
   (void)qos_profile; // todo: figure out what to do with this. maybe
                      // return an error if anything complicated is requested?
 
-  const message_type_support_callbacks_t *type_info =
+  const message_type_support_callbacks_t *callbacks =
     static_cast<const message_type_support_callbacks_t *>(type_support->data);
   // todo: deal with dynamic memory created here
-  std::string type_name = _create_type_name(type_info, "msg");
+  std::string type_name = _create_type_name(callbacks, "msg");
   printf("rmw_create_publisher(%s, %s)\n", 
          topic_name,
          type_name.c_str());
@@ -484,6 +484,7 @@ rmw_create_publisher(
   PublisherInfo *pub_info = static_cast<PublisherInfo *>(
                               rmw_allocate(sizeof(PublisherInfo)));
   pub_info->pub = freertps_pub;
+  pub_info->callbacks = callbacks;
 
   publisher->implementation_identifier = freertps_cpp_identifier;
   publisher->data = pub_info;
@@ -609,7 +610,6 @@ rmw_create_publisher(
   publisher_info->dds_topic = topic;
   publisher_info->dds_publisher = dds_publisher;
   publisher_info->topic_writer = topic_writer;
-  publisher_info->callbacks = callbacks;
 
   publisher->implementation_identifier = opensplice_cpp_identifier;
   publisher->data = publisher_info;
@@ -737,9 +737,22 @@ rmw_publish(const rmw_publisher_t * publisher, const void * ros_message)
     RMW_SET_ERROR_MSG("publisher info handle is null");
     return RMW_RET_ERROR;
   }
+  const message_type_support_callbacks_t *callbacks = pub_info->callbacks;
+  if (!callbacks) {
+    RMW_SET_ERROR_MSG("callbacks handle is null");
+    return RMW_RET_ERROR;
+  }
+  frudp_pub_t *fr_pub = pub_info->pub;
+  const char * error_string = callbacks->publish(fr_pub, ros_message);
+  if (error_string) {
+    RMW_SET_ERROR_MSG((std::string("failed to publish:") + error_string).c_str());
+    return RMW_RET_ERROR;
+  }
+  return RMW_RET_OK;
+ 
   // here is where we'll call into serialization someday. for now, serialize
   // it by hand here, just for std_msgs::string
-  frudp_pub_t *pub = pub_info->pub;
+  /*
   if (strcmp(pub->type_name, "std_msgs::msg::dds_::String_"))
   {
     printf("woah. i don't know how to serialize [%s]\n", 
@@ -748,6 +761,7 @@ rmw_publish(const rmw_publisher_t * publisher, const void * ros_message)
     return RMW_RET_ERROR;
   }
   printf("about to serialize...\n");
+  */
   /*
   const std_msgs::msg::String *s = static_cast<const std_msgs::msg::String *>(ros_message);
   static char ser_buf[256];
@@ -761,22 +775,6 @@ rmw_publish(const rmw_publisher_t * publisher, const void * ros_message)
   //uint32_t rtps_string_len = strlen(&msg[4]) + 1;
   *((uint32_t *)ser_buf) = s_len + 1; // add 1 for the null char at the end
   freertps_publish(pub, (uint8_t *)ser_buf, s_len + 5);
-  */
-
-  return RMW_RET_OK;
-  /*
-  DDS::DataWriter * topic_writer = publisher_info->topic_writer;
-  const message_type_support_callbacks_t * callbacks = publisher_info->callbacks;
-  if (!callbacks) {
-    RMW_SET_ERROR_MSG("callbacks handle is null");
-    return RMW_RET_ERROR;
-  }
-
-  const char * error_string = callbacks->publish(topic_writer, ros_message);
-  if (error_string) {
-    RMW_SET_ERROR_MSG((std::string("failed to publish:") + error_string).c_str());
-    return RMW_RET_ERROR;
-  }
   return RMW_RET_OK;
   */
 }
