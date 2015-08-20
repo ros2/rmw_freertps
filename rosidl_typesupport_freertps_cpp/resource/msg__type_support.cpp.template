@@ -384,9 +384,9 @@ finally:
   return "not yet implemented";
 }
 
-static message_type_support_callbacks_t callbacks = {
+static message_type_support_callbacks_t message_type_support_callbacks = {
   "@(spec.base_type.pkg_name)",
-  "@(spec.base_type.type)",
+  "@(spec.base_type.type)"
 };
 /*
   &register_type__@(spec.base_type.type),
@@ -397,7 +397,7 @@ static message_type_support_callbacks_t callbacks = {
 
 static rosidl_message_type_support_t handle = {
   rosidl_typesupport_freertps_cpp::typesupport_freertps_identifier,
-  &callbacks
+  &message_type_support_callbacks
 };
 
 

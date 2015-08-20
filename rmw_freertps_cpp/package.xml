@@ -18,6 +18,8 @@
   <build_depend>rosidl_typesupport_freertps_cpp</build_depend>
   <build_depend>rosidl_generator_dds_idl</build_depend>
 
+  <!--<build_depend>std_msgs</build_depend>-->
+
   <build_export_depend>libfreertps</build_export_depend>
   <build_export_depend>rosidl_generator_cpp</build_export_depend>
   <build_export_depend>rosidl_typesupport_freertps_cpp</build_export_depend>

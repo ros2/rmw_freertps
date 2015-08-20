@@ -20,6 +20,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+#include <cstring>
 
 /*
 #include <ccpp_dds_dcps.h>
@@ -38,6 +39,11 @@
 #include <rosidl_typesupport_freertps_cpp/service_type_support.h>
 
 #include <rmw/impl/cpp/macros.hpp>
+
+// hacked up temporary include, just for now as placeholder
+// the real includes will be in the auto-generated type_support.hpp
+#include "std_msgs/msg/string__struct.hpp"
+
 
 extern "C"
 {
@@ -61,6 +67,16 @@ extern "C"
 
 using rosidl_typesupport_freertps_cpp::typesupport_freertps_identifier;
 const char * freertps_cpp_identifier = "freertps_static";
+
+struct PublisherInfo
+{
+  frudp_pub_t *pub;
+  /*
+  DDS::Topic * dds_topic;
+  DDS::DataWriter * topic_writer;
+  const message_type_support_callbacks_t * callbacks;
+  */
+};
 
 /*
 class EmptyDataReaderListener
@@ -305,15 +321,12 @@ rmw_create_node(const char * name, size_t domain_id)
   builtin_subscription_datareader->set_listener(subscriber_listener, DDS::DATA_AVAILABLE_STATUS);
   */
 
-  /*
-  rmw_node_t * node = nullptr;
-  node = rmw_node_allocate();
+  rmw_node_t * node = rmw_node_allocate();
   if (!node) {
     RMW_SET_ERROR_MSG("failed to allocate rmw_node_t");
     return nullptr;
     //goto fail;
   }
-  */
   node->implementation_identifier = freertps_cpp_identifier;
   node->data = nullptr;
   //RMW_SET_ERROR_MSG("not yet implemented");
@@ -448,10 +461,34 @@ rmw_create_publisher(
     type support,
     type_support->typesupport_identifier, typesupport_freertps_identifier,
     return nullptr)
+  (void)qos_profile; // todo: figure out what to do with this. maybe
+                     // return an error if anything complicated is requested?
 
-  (void)topic_name;
-  (void)qos_profile;
-  return nullptr; // TODO: not this
+  const message_type_support_callbacks_t *type_info =
+    static_cast<const message_type_support_callbacks_t *>(type_support->data);
+  // todo: deal with dynamic memory created here
+  std::string type_name = _create_type_name(type_info, "msg");
+  printf("rmw_create_publisher(%s, %s)\n", 
+         topic_name,
+         type_name.c_str());
+
+  rmw_publisher_t *publisher = rmw_publisher_allocate();
+  if (!publisher) {
+    RMW_SET_ERROR_MSG("failed to allocate rmw_publisher_t");
+    return nullptr;
+  }
+
+  frudp_pub_t *freertps_pub = 
+    freertps_create_pub(topic_name, type_name.c_str());
+
+  PublisherInfo *pub_info = static_cast<PublisherInfo *>(
+                              rmw_allocate(sizeof(PublisherInfo)));
+  pub_info->pub = freertps_pub;
+
+  publisher->implementation_identifier = freertps_cpp_identifier;
+  publisher->data = pub_info;
+
+  return publisher;
 
   /*
   auto node_info = static_cast<OpenSpliceStaticNodeInfo *>(node->data);
@@ -471,7 +508,6 @@ rmw_create_publisher(
     RMW_SET_ERROR_MSG("callbacks handle is null");
     return NULL;
   }
-  std::string type_name = _create_type_name(callbacks, "msg");
 
   const char * error_string = callbacks->register_type(participant, type_name.c_str());
   if (error_string) {
@@ -487,19 +523,12 @@ rmw_create_publisher(
     return nullptr;
   }
   // Past this point, a failure results in unrolling code in the goto fail block.
-  rmw_publisher_t * publisher = nullptr;
   DDS::Publisher * dds_publisher = nullptr;
   DDS::TopicQos default_topic_qos;
   DDS::Topic * topic = nullptr;
   DDS::DataWriterQos datawriter_qos;
   DDS::DataWriter * topic_writer = nullptr;
   OpenSpliceStaticPublisherInfo * publisher_info = nullptr;
-  // Begin initializing elements.
-  publisher = rmw_publisher_allocate();
-  if (!publisher) {
-    RMW_SET_ERROR_MSG("failed to allocate rmw_publisher_t");
-    goto fail;
-  }
   dds_publisher = participant->create_publisher(publisher_qos, NULL, DDS::STATUS_MASK_NONE);
   if (!dds_publisher) {
     RMW_SET_ERROR_MSG("failed to create publisher");
@@ -635,7 +664,10 @@ rmw_destroy_publisher(rmw_node_t * node, rmw_publisher_t * publisher)
     publisher handle,
     publisher->implementation_identifier, freertps_cpp_identifier,
     return RMW_RET_ERROR)
-  auto result = RMW_RET_OK;
+
+  //auto result = RMW_RET_OK;
+  auto result = RMW_RET_ERROR;
+  RMW_SET_ERROR_MSG("rmw_destroy_publisher() not yet implemented");
   return result;
 
   /*
@@ -699,16 +731,39 @@ rmw_publish(const rmw_publisher_t * publisher, const void * ros_message)
     RMW_SET_ERROR_MSG("ros message handle is null");
     return RMW_RET_ERROR;
   }
-  RMW_SET_ERROR_MSG("not yet implemented");
-  return RMW_RET_ERROR; // TODO: something smarter
-  /*
-
-  const OpenSpliceStaticPublisherInfo * publisher_info =
-    static_cast<const OpenSpliceStaticPublisherInfo *>(publisher->data);
-  if (!publisher_info) {
+  const PublisherInfo * pub_info =
+    static_cast<const PublisherInfo *>(publisher->data);
+  if (!pub_info) {
     RMW_SET_ERROR_MSG("publisher info handle is null");
     return RMW_RET_ERROR;
   }
+  // here is where we'll call into serialization someday. for now, serialize
+  // it by hand here, just for std_msgs::string
+  frudp_pub_t *pub = pub_info->pub;
+  if (strcmp(pub->type_name, "std_msgs::msg::dds_::String_"))
+  {
+    printf("woah. i don't know how to serialize [%s]\n", 
+           pub_info->pub->type_name);
+    RMW_SET_ERROR_MSG("unable to serialize type");
+    return RMW_RET_ERROR;
+  }
+  //printf("about to serialize...\n");
+  const std_msgs::msg::String *s = static_cast<const std_msgs::msg::String *>(ros_message);
+  static char ser_buf[256];
+  int s_len = (int)s->data.length();
+  //printf("  len = %d\n", s_len);
+  //snprintf(&ser_buf[4], sizeof(msg) - 4, "Hello World: %d", pub_count++);
+  if (s_len + 4 + 1 > (int)sizeof(ser_buf) - 5)
+    s_len = (int)sizeof(ser_buf) - 5;
+  memcpy(&ser_buf[4], &s->data[0], s_len);
+  ser_buf[s_len + 5] = 0; // add a null char plz
+  //uint32_t rtps_string_len = strlen(&msg[4]) + 1;
+  *((uint32_t *)ser_buf) = s_len + 1; // add 1 for the null char at the end
+  freertps_publish(pub, (uint8_t *)ser_buf, s_len + 5);
+
+  //freertps_publish(pub_info->pub, (uint8_t *)
+  return RMW_RET_OK;
+  /*
   DDS::DataWriter * topic_writer = publisher_info->topic_writer;
   const message_type_support_callbacks_t * callbacks = publisher_info->callbacks;
   if (!callbacks) {
@@ -751,7 +806,7 @@ rmw_create_subscription(
     type_support->typesupport_identifier, typesupport_freertps_identifier,
     return nullptr)
 
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_create_subscription() not yet implemented");
   (void)topic_name;
   (void)qos_profile;
   (void)ignore_local_publications;
@@ -960,7 +1015,7 @@ rmw_destroy_subscription(rmw_node_t * node, rmw_subscription_t * subscription)
     subscription handle,
     subscription->implementation_identifier, freertps_cpp_identifier,
     return RMW_RET_ERROR)
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_destroy_subscription() not yet implemented");
   return RMW_RET_ERROR; // todo: not this
   /*
   auto node_info = static_cast<OpenSpliceStaticNodeInfo *>(node->data);
@@ -1041,7 +1096,7 @@ rmw_take(const rmw_subscription_t * subscription, void * ros_message, bool * tak
     RMW_SET_ERROR_MSG("taken argument cannot be null");
     return RMW_RET_ERROR;
   }
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_take() not yet implemented");
   return RMW_RET_ERROR; // todo: not this
   /*
   OpenSpliceStaticSubscriberInfo * subscriber_info =
@@ -1078,16 +1133,19 @@ rmw_take(const rmw_subscription_t * subscription, void * ros_message, bool * tak
 rmw_guard_condition_t *
 rmw_create_guard_condition()
 {
-  RMW_SET_ERROR_MSG("not yet implemented");
-  return nullptr; // todo: not this
-  /*
+  //RMW_SET_ERROR_MSG("rmw_create_guard_condition() not yet implemented");
+  //return nullptr; // todo: not this
   rmw_guard_condition_t * guard_condition = rmw_guard_condition_allocate();
   if (!guard_condition) {
     RMW_SET_ERROR_MSG("failed to allocate guard condition");
-    goto fail;
+    return nullptr;
+    //goto fail;
   }
   guard_condition->implementation_identifier = freertps_cpp_identifier;
-  guard_condition->data = rmw_allocate(sizeof(DDS::GuardCondition));
+  guard_condition->data = nullptr;
+  return guard_condition;
+  /*
+  rmw_allocate(sizeof(DDS::GuardCondition));
   if (!guard_condition->data) {
     RMW_SET_ERROR_MSG("failed to allocate dds guard condition");
     goto fail;
@@ -1118,10 +1176,11 @@ rmw_destroy_guard_condition(rmw_guard_condition_t * guard_condition)
     guard condition handle,
     guard_condition->implementation_identifier, freertps_cpp_identifier,
     return RMW_RET_ERROR)
-  RMW_SET_ERROR_MSG("not yet implemented");
-  return RMW_RET_ERROR; // todo: not this
-  /*
   auto result = RMW_RET_OK;
+  return result;
+  //RMW_SET_ERROR_MSG("rmw_destroy_guard_condition() not yet implemented");
+  //return RMW_RET_ERROR; // todo: not this
+  /*
   DDS::GuardCondition * dds_guard_condition =
     static_cast<DDS::GuardCondition *>(guard_condition->data);
   // Explicitly call destructor since the "placement new" was used
@@ -1129,7 +1188,6 @@ rmw_destroy_guard_condition(rmw_guard_condition_t * guard_condition)
     dds_guard_condition->~GuardCondition(), GuardCondition, result = RMW_RET_ERROR)
   rmw_free(guard_condition->data);
   rmw_guard_condition_free(guard_condition);
-  return result;
   */
 }
 
@@ -1144,7 +1202,7 @@ rmw_trigger_guard_condition(const rmw_guard_condition_t * guard_condition)
     guard condition handle,
     guard_condition->implementation_identifier, freertps_cpp_identifier,
     return RMW_RET_ERROR)
-  RMW_SET_ERROR_MSG("guard condition not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_trigger_guard_condition() not yet implemented");
   return RMW_RET_ERROR;
 
   /*
@@ -1170,13 +1228,19 @@ rmw_wait(
   rmw_clients_t * clients,
   rmw_time_t * wait_timeout)
 {
-  RMW_SET_ERROR_MSG("rmw_wait not implemented");
   (void)subscriptions;
   (void)services;
   (void)clients;
   (void)wait_timeout;
   (void)guard_conditions;
+  uint32_t max_usecs = wait_timeout->nsec / 1000 + 
+                       wait_timeout->sec * 1000000;
+  frudp_listen(max_usecs);
+  return RMW_RET_OK;
+  /*
+  RMW_SET_ERROR_MSG("rmw_wait not implemented");
   return RMW_RET_ERROR;
+  */
   /*
   DDS::WaitSet waitset;
 
@@ -1406,7 +1470,7 @@ rmw_create_client(
   const rosidl_service_type_support_t * type_support,
   const char * service_name)
 {
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_create_client() not yet implemented");
   (void)node;
   (void)type_support;
   (void)service_name;
@@ -1513,7 +1577,7 @@ fail:
 rmw_ret_t
 rmw_destroy_client(rmw_client_t * client)
 {
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_destroy_client() not yet implemented");
   (void)client;
   return RMW_RET_ERROR;
   /*
@@ -1557,7 +1621,7 @@ rmw_send_request(
   const rmw_client_t * client, const void * ros_request,
   int64_t * sequence_id)
 {
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_send_request() not yet implemented");
   (void)client;
   (void)ros_request;
   (void)sequence_id;
@@ -1606,7 +1670,7 @@ rmw_ret_t
 rmw_take_response(const rmw_client_t * client, void * ros_request_header,
   void * ros_response, bool * taken)
 {
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_take_response() not yet implemented");
   (void)client;
   (void)ros_request_header;
   (void)ros_response;
@@ -1667,7 +1731,7 @@ rmw_create_service(
   const rosidl_service_type_support_t * type_support,
   const char * service_name)
 {
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_create_service() not yet implemented");
   (void)node;
   (void)type_support;
   (void)service_name;
@@ -1766,7 +1830,7 @@ fail:
 rmw_ret_t
 rmw_destroy_service(rmw_service_t * service)
 {
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_destroy_service() not yet implemented");
   (void)service;
   return RMW_RET_ERROR;
   /*
@@ -1808,7 +1872,7 @@ rmw_take_request(
   const rmw_service_t * service,
   void * ros_request_header, void * ros_request, bool * taken)
 {
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_take_request() not yet implemented");
   (void)service;
   (void)ros_request_header;
   (void)ros_request;
@@ -1868,7 +1932,7 @@ rmw_send_response(
   const rmw_service_t * service,
   void * ros_request_header, void * ros_response)
 {
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_send_response() not yet implemented");
   (void)service;
   (void)ros_request_header;
   (void)ros_response;
@@ -1923,6 +1987,7 @@ destroy_topic_names_and_types(
   rmw_topic_names_and_types_t * topic_names_and_types)
 {
   (void)topic_names_and_types;
+  printf("rmw_destroy_topic_names_and_types() not yet implemented\n");
   return; // not yet implemented
   /*
   if (topic_names_and_types->topic_count) {
@@ -1950,7 +2015,7 @@ rmw_get_topic_names_and_types(
   const rmw_node_t * node,
   rmw_topic_names_and_types_t * topic_names_and_types)
 {
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_get_topic_names_and_types() not yet implemented");
   (void)node;
   (void)topic_names_and_types;
   return RMW_RET_ERROR;
@@ -2072,7 +2137,7 @@ rmw_ret_t
 rmw_destroy_topic_names_and_types(
   rmw_topic_names_and_types_t * topic_names_and_types)
 {
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_destroy_topic_names_and_types() not yet implemented");
   (void)topic_names_and_types;
   return RMW_RET_ERROR;
   /*
@@ -2107,7 +2172,7 @@ rmw_count_publishers(
     RMW_SET_ERROR_MSG("count handle is null");
     return RMW_RET_ERROR;
   }
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_count_publishers() not yet implemented");
   return RMW_RET_ERROR;
   /* 
   auto node_info = static_cast<OpenSpliceStaticNodeInfo *>(node->data);
@@ -2153,7 +2218,7 @@ rmw_count_subscribers(
     RMW_SET_ERROR_MSG("count handle is null");
     return RMW_RET_ERROR;
   }
-  RMW_SET_ERROR_MSG("not yet implemented");
+  RMW_SET_ERROR_MSG("rmw_count_subscribers() not yet implemented");
   return RMW_RET_ERROR;
   /*
   auto node_info = static_cast<OpenSpliceStaticNodeInfo *>(node->data);

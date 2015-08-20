@@ -1,0 +1,8 @@
+sequence of rmw calls during the 'talker' demo:
+
+rmw_init()
+rmw_create_node()
+rmw_create_publisher()
+rmw_publish()
+rmw_create_guard_condition()
+rmw_wait()
