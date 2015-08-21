@@ -329,6 +329,8 @@ rmw_create_node(const char * name, size_t domain_id)
   }
   node->implementation_identifier = freertps_cpp_identifier;
   node->data = nullptr;
+
+  frudp_disco_tick();
   //RMW_SET_ERROR_MSG("not yet implemented");
   return node;
 
@@ -478,8 +480,13 @@ rmw_create_publisher(
     return nullptr;
   }
 
-  frudp_pub_t *freertps_pub = 
-    freertps_create_pub(topic_name, type_name.c_str());
+  frudp_pub_t *freertps_pub = nullptr;
+  if (strcmp(topic_name, "parameter_events"))
+    freertps_pub = freertps_create_pub(topic_name, type_name.c_str());
+  else
+  {
+    printf("refusing to create parameter_events topic\n");
+  }
 
   PublisherInfo *pub_info = static_cast<PublisherInfo *>(
                               rmw_allocate(sizeof(PublisherInfo)));
@@ -743,6 +750,11 @@ rmw_publish(const rmw_publisher_t * publisher, const void * ros_message)
     return RMW_RET_ERROR;
   }
   frudp_pub_t *fr_pub = pub_info->pub;
+  if (!fr_pub)
+  {
+    RMW_SET_ERROR_MSG("hey, fr_pub is empty. uh oh...\n");
+    return RMW_RET_ERROR;
+  }
   const char * error_string = callbacks->publish(fr_pub, ros_message);
   if (error_string) {
     RMW_SET_ERROR_MSG((std::string("failed to publish:") + error_string).c_str());
@@ -1232,9 +1244,18 @@ rmw_wait(
   (void)clients;
   (void)wait_timeout;
   (void)guard_conditions;
-  uint32_t max_usecs = wait_timeout->nsec / 1000 + 
-                       wait_timeout->sec * 1000000;
+  const uint32_t max_usecs = wait_timeout->nsec / 1000 + 
+                             wait_timeout->sec * 1000000;
   frudp_listen(max_usecs);
+
+  static double t_prev_disco = 0; // stayin alive
+  const double t_now = fr_time_now_double();
+  if (t_now - t_prev_disco > 1.0) // disco every second. stayin alive.
+  {
+    t_prev_disco = t_now;
+    frudp_disco_tick();
+    printf("disco tick\n");
+  }
   return RMW_RET_OK;
   /*
   RMW_SET_ERROR_MSG("rmw_wait not implemented");
