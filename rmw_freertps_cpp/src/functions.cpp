@@ -1146,6 +1146,7 @@ rmw_create_guard_condition()
 {
   //RMW_SET_ERROR_MSG("rmw_create_guard_condition() not yet implemented");
   //return nullptr; // todo: not this
+  printf("rmw_guard_condition alloc\r\n");
   rmw_guard_condition_t * guard_condition = rmw_guard_condition_allocate();
   if (!guard_condition) {
     RMW_SET_ERROR_MSG("failed to allocate guard condition");
@@ -1213,8 +1214,10 @@ rmw_trigger_guard_condition(const rmw_guard_condition_t * guard_condition)
     guard condition handle,
     guard_condition->implementation_identifier, freertps_cpp_identifier,
     return RMW_RET_ERROR)
-  RMW_SET_ERROR_MSG("rmw_trigger_guard_condition() not yet implemented");
-  return RMW_RET_ERROR;
+
+  //RMW_SET_ERROR_MSG("rmw_trigger_guard_condition() not yet implemented");
+  //return RMW_RET_ERROR;
+  return RMW_RET_OK;
 
   /*
   DDS::GuardCondition * dds_guard_condition =
@@ -1246,6 +1249,7 @@ rmw_wait(
   (void)guard_conditions;
   const uint32_t max_usecs = wait_timeout->nsec / 1000 + 
                              wait_timeout->sec * 1000000;
+  printf("rmw_wait(%d)\n", (int)max_usecs);
   frudp_listen(max_usecs);
 
   static double t_prev_disco = 0; // stayin alive
@@ -1254,7 +1258,7 @@ rmw_wait(
   {
     t_prev_disco = t_now;
     frudp_disco_tick();
-    printf("disco tick\n");
+    //printf("disco tick\n");
   }
   return RMW_RET_OK;
   /*

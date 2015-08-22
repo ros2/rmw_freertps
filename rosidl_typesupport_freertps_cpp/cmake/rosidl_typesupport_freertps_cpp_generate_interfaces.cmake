@@ -234,7 +234,7 @@ endif()
 link_directories(${freertps_LIBRARY_DIRS})
   #${_generated_external_msg_files}
   #${_generated_external_srv_files})
-add_library(${rosidl_generate_interfaces_TARGET}${_target_suffix} SHARED
+add_library(${rosidl_generate_interfaces_TARGET}${_target_suffix} 
   ${_generated_msg_files}
   ${_generated_srv_files})
 if(WIN32)
