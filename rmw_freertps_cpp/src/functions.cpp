@@ -22,11 +22,6 @@
 #include <vector>
 #include <cstring>
 
-/*
-#include <ccpp_dds_dcps.h>
-#include <dds_dcps.h>
-*/
-
 #include <rmw/allocators.h>
 #include <rmw/error_handling.h>
 #include <rmw/impl/cpp/macros.hpp>
@@ -229,13 +224,6 @@ rmw_get_implementation_identifier()
 rmw_ret_t
 rmw_init()
 {
-  /*
-  DDS::DomainParticipantFactory_var dp_factory = DDS::DomainParticipantFactory::get_instance();
-  if (!dp_factory) {
-    RMW_SET_ERROR_MSG("failed to get domain participant factory");
-    return RMW_RET_ERROR;
-  }
-  */
   printf("rmw_init()\n");
   freertps_system_init();
   return RMW_RET_OK;
@@ -246,80 +234,13 @@ rmw_create_node(const char * name, size_t domain_id)
 {
   (void)name; // need to stash this somewhere
 
-  if (!frudp_part_create(domain_id))
+  //if (!frudp_part_create(domain_id))
+  // TODO(jacquelinekay): domain ID is not yet implemented in freertps (?)
+  if (!frudp_part_create())
   {
     RMW_SET_ERROR_MSG("failed to create freertps participant");
     return nullptr;
   }
-  /*
-
-  DDS::DomainParticipantFactory_var dp_factory = DDS::DomainParticipantFactory::get_instance();
-  if (!dp_factory) {
-    RMW_SET_ERROR_MSG("failed to get domain participant factory");
-    return nullptr;
-  }
-
-  DDS::DomainId_t domain = static_cast<DDS::DomainId_t>(domain_id);
-  DDS::DomainParticipant * participant = nullptr;
-
-  participant = dp_factory->create_participant(
-    domain, PARTICIPANT_QOS_DEFAULT, NULL, DDS::STATUS_MASK_NONE);
-  if (!participant) {
-    RMW_SET_ERROR_MSG("failed to create domain participant");
-    return NULL;
-  }
-
-  rmw_node_t * node = nullptr;
-  OpenSpliceStaticNodeInfo * node_info = nullptr;
-  CustomPublisherListener * publisher_listener = nullptr;
-  CustomSubscriberListener * subscriber_listener = nullptr;
-  void * buf = nullptr;
-
-  DDS::DataReader * data_reader = nullptr;
-  DDS::PublicationBuiltinTopicDataDataReader * builtin_publication_datareader = nullptr;
-  DDS::SubscriptionBuiltinTopicDataDataReader * builtin_subscription_datareader = nullptr;
-  DDS::Subscriber * builtin_subscriber = participant->get_builtin_subscriber();
-  if (!builtin_subscriber) {
-    RMW_SET_ERROR_MSG("builtin subscriber handle is null");
-    goto fail;
-  }
-
-  // setup publisher listener
-  data_reader = builtin_subscriber->lookup_datareader("DCPSPublication");
-  builtin_publication_datareader =
-    DDS::PublicationBuiltinTopicDataDataReader::_narrow(data_reader);
-  if (!builtin_publication_datareader) {
-    RMW_SET_ERROR_MSG("builtin publication datareader handle is null");
-    goto fail;
-  }
-
-  buf = rmw_allocate(sizeof(CustomPublisherListener));
-  if (!buf) {
-    RMW_SET_ERROR_MSG("failed to allocate memory");
-    goto fail;
-  }
-  RMW_TRY_PLACEMENT_NEW(publisher_listener, buf, goto fail, CustomPublisherListener)
-  buf = nullptr;
-  builtin_publication_datareader->set_listener(publisher_listener, DDS::DATA_AVAILABLE_STATUS);
-
-  data_reader = builtin_subscriber->lookup_datareader("DCPSSubscription");
-  builtin_subscription_datareader =
-    DDS::SubscriptionBuiltinTopicDataDataReader::_narrow(data_reader);
-  if (!builtin_subscription_datareader) {
-    RMW_SET_ERROR_MSG("builtin subscription datareader handle is null");
-    goto fail;
-  }
-
-  // setup subscriber listener
-  buf = rmw_allocate(sizeof(CustomSubscriberListener));
-  if (!buf) {
-    RMW_SET_ERROR_MSG("failed to allocate memory");
-    goto fail;
-  }
-  RMW_TRY_PLACEMENT_NEW(subscriber_listener, buf, goto fail, CustomSubscriberListener)
-  buf = nullptr;
-  builtin_subscription_datareader->set_listener(subscriber_listener, DDS::DATA_AVAILABLE_STATUS);
-  */
 
   rmw_node_t * node = rmw_node_allocate();
   if (!node) {
@@ -333,55 +254,6 @@ rmw_create_node(const char * name, size_t domain_id)
   frudp_disco_tick();
   //RMW_SET_ERROR_MSG("not yet implemented");
   return node;
-
-  /*
-  buf = rmw_allocate(sizeof(OpenSpliceStaticNodeInfo));
-  if (!buf) {
-    RMW_SET_ERROR_MSG("failed to allocate memory");
-    goto fail;
-  }
-  RMW_TRY_PLACEMENT_NEW(node_info, buf, goto fail, OpenSpliceStaticNodeInfo)
-  buf = nullptr;
-  node_info->participant = participant;
-  node_info->publisher_listener = publisher_listener;
-  node_info->subscriber_listener = subscriber_listener;
-
-  node->implementation_identifier = opensplice_cpp_identifier;
-  node->data = node_info;
-
-  return node;
-fail:
-  if (participant) {
-    if (dp_factory->delete_participant(participant) != DDS::RETCODE_OK) {
-      std::stringstream ss;
-      ss << "leaking domain participant while handling failure at: " <<
-        __FILE__ << ":" << __LINE__ << '\n';
-      (std::cerr << ss.str()).flush();
-    }
-  }
-  if (publisher_listener) {
-    RMW_TRY_DESTRUCTOR_FROM_WITHIN_FAILURE(
-      publisher_listener->~CustomPublisherListener(), CustomPublisherListener)
-    rmw_free(publisher_listener);
-  }
-  if (subscriber_listener) {
-    RMW_TRY_DESTRUCTOR_FROM_WITHIN_FAILURE(
-      subscriber_listener->~CustomSubscriberListener(), CustomSubscriberListener)
-    rmw_free(subscriber_listener);
-  }
-  if (node_info) {
-    RMW_TRY_DESTRUCTOR_FROM_WITHIN_FAILURE(
-      node_info->~OpenSpliceStaticNodeInfo(), OpenSpliceStaticNodeInfo)
-    rmw_free(node_info);
-  }
-  if (buf) {
-    rmw_free(buf);
-  }
-  if (node) {
-    rmw_node_free(node);
-  }
-  return nullptr;
-  */
 }
 
 rmw_ret_t
@@ -444,7 +316,7 @@ rmw_create_publisher(
   const rmw_node_t * node,
   const rosidl_message_type_support_t * type_support,
   const char * topic_name,
-  const rmw_qos_profile_t & qos_profile)
+  const rmw_qos_profile_t * qos_profile)
 {
   if (!node) {
     RMW_SET_ERROR_MSG("node handle is null");
@@ -796,7 +668,7 @@ rmw_create_subscription(
   const rmw_node_t * node,
   const rosidl_message_type_support_t * type_support,
   const char * topic_name,
-  const rmw_qos_profile_t & qos_profile,
+  const rmw_qos_profile_t * qos_profile,
   bool ignore_local_publications)
 {
   if (!node) {
@@ -1240,14 +1112,14 @@ rmw_wait(
   rmw_guard_conditions_t * guard_conditions,
   rmw_services_t * services,
   rmw_clients_t * clients,
-  rmw_time_t * wait_timeout)
+  const rmw_time_t * wait_timeout)
 {
   (void)subscriptions;
   (void)services;
   (void)clients;
   (void)wait_timeout;
   (void)guard_conditions;
-  const uint32_t max_usecs = wait_timeout->nsec / 1000 + 
+  const uint32_t max_usecs = wait_timeout->nsec / 1000 +
                              wait_timeout->sec * 1000000;
   printf("rmw_wait(%d)\n", (int)max_usecs);
   frudp_listen(max_usecs);
@@ -1492,7 +1364,8 @@ rmw_client_t *
 rmw_create_client(
   const rmw_node_t * node,
   const rosidl_service_type_support_t * type_support,
-  const char * service_name)
+  const char * service_name,
+  const rmw_qos_profile_t * qos_policies)
 {
   RMW_SET_ERROR_MSG("rmw_create_client() not yet implemented");
   (void)node;
@@ -1753,7 +1626,8 @@ rmw_service_t *
 rmw_create_service(
   const rmw_node_t * node,
   const rosidl_service_type_support_t * type_support,
-  const char * service_name)
+  const char * service_name,
+  const rmw_qos_profile_t * qos_policies)
 {
   RMW_SET_ERROR_MSG("rmw_create_service() not yet implemented");
   (void)node;
