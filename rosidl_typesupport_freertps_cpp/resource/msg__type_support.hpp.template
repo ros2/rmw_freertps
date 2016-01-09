@@ -19,13 +19,6 @@
 //#include "@(spec.base_type.pkg_name)/@(subfolder)/dds_freertps/ccpp_@(spec.base_type.type)_.h"
 #include "@(spec.base_type.pkg_name)/msg/dds_freertps/visibility_control.h"
 
-namespace DDS
-{
-class DomainParticipant;
-class DataReader;
-class DataWriter;
-}  // namespace DDS
-
 namespace @(spec.base_type.pkg_name)
 {
 
