@@ -28,6 +28,18 @@ namespace @(subfolder)
 namespace typesupport_opensplice_cpp
 {
 
+ROSIDL_TYPESUPPORT_FREERTPS_CPP_PUBLIC_@(spec.base_type.pkg_name)
+/// Serialize the ROS message to CDR format.
+/**
+ * \param[in] ros_message The ROS message struct to convert.
+ * \param[in] cdr_message The serialized message as a 32-bit blob.
+ */
+extern void serialize_ros_msg(
+  const @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) & ros_message,
+  uint32_t & cdr_message,
+  uint8_t * buf,
+  uint32_t size);
+
 /*
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_PUBLIC_@(spec.base_type.pkg_name)
 extern void register_type__@(spec.base_type.type)(
