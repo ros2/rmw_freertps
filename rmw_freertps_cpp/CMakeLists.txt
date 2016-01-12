@@ -22,7 +22,6 @@ ament_export_include_directories(${freertps_INCLUDE_DIRS})
 
 link_directories(${freertps_LIBRARY_DIRS})
 add_library(rmw_freertps_cpp SHARED src/functions.cpp)
-#target_link_libraries(rmw_freertps_cpp rosidl_typesupport_freertps_cpp)
 ament_target_dependencies(rmw_freertps_cpp
   "rmw"
   "rosidl_generator_cpp"

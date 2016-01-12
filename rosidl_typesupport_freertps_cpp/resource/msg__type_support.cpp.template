@@ -31,39 +31,39 @@ extern "C"
 @{header_file_name = get_header_filename_from_msg_name(spec.base_type.type)}@
 #include "@(spec.base_type.pkg_name)/@(subfolder)/@(header_file_name)__struct.hpp"
 #include "@(spec.base_type.pkg_name)/@(subfolder)/dds_freertps/@(header_file_name)__type_support.hpp"
-//#include "@(spec.base_type.pkg_name)/@(subfolder)/dds_freertps/ccpp_@(spec.base_type.type)_.h"
 #include "rosidl_typesupport_freertps_cpp/identifier.hpp"
 #include <rosidl_typesupport_freertps_cpp/message_type_support.h>
 
-// forward declaration of message dependencies and their conversion functions
+// forward declaration of conversion functions for message dependencies
 @[for field in spec.fields]@
-@[if not field.type.is_primitive_type()]@
-@[if field.type.pkg_name == 'builtin_interfaces']@
-#include "rosidl_typesupport_freertps_cpp/duration__type_support.hpp"
-#include "rosidl_typesupport_freertps_cpp/time__type_support.hpp"
-@[else]@
+    @[if not field.type.is_primitive_type()]@
+@{
+dependency_subfolder = "msg"
+if field.type.type.endswith("Request") or field.type.type.endswith("Response"):
+    dependency_subfolder = "srv"
+}@
 namespace @(field.type.pkg_name)
 {
-namespace msg
+namespace @(dependency_subfolder)
 {
-namespace dds_
-{
-struct @(field.type.type)_;
-}  // namespace dds_
 namespace typesupport_freertps_cpp
 {
-void convert_ros_message_to_dds(
-  const @(field.type.pkg_name)::msg::@(field.type.type) &,
-  @(field.type.pkg_name)::msg::dds_::@(field.type.type)_ &);
-void convert_dds_message_to_ros(
-  const @(field.type.pkg_name)::msg::dds_::@(field.type.type)_ &,
-  @(field.type.pkg_name)::msg::@(field.type.type) &);
+
+uint32_t serialize_ros_msg(
+  const @(field.type.pkg_name)::@(dependency_subfolder)::@(field.type.type) & ros_message,
+  uint8_t * _buf,
+  uint32_t _buf_size);
+
+bool deserialize_ros_msg(
+  uint8_t ** message_pointer,
+  @(field.type.pkg_name)::@(dependency_subfolder)::@(field.type.type) & ros_message,
+  uint32_t * length);
+
 }  // namespace typesupport_freertps_cpp
 }  // namespace msg
 }  // namespace @(field.type.pkg_name)
-@[end if]@
 
-@[end if]@
+    @[end if]@
 @[end for]@
 
 namespace @(spec.base_type.pkg_name)
@@ -75,29 +75,63 @@ namespace @(subfolder)
 namespace typesupport_freertps_cpp
 {
 
-@{
-__dds_msg_type_prefix = "{}::{}::dds_::{}_".format(
-  spec.base_type.pkg_name, subfolder, spec.base_type.type)
-}@
 
-#if 0
-typedef @(__dds_msg_type_prefix) __dds_msg_type;
-#endif
 typedef @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) __ros_msg_type;
 
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
-const char *
-register_type__@(spec.base_type.type)(
-  void * untyped_participant,
-  const char * type_name)
+uint32_t serialize_ros_msg(
+  const __ros_msg_type & ros_message,
+  uint8_t * _buf,
+  uint32_t _buf_size)
 {
-  if (!untyped_participant) {
-    return "untyped participant handle is null";
+  (void) _buf_size;
+@[if len(spec.fields) > 0]@
+  const __ros_msg_type * _s = &ros_message;
+@[else]@
+  (void) ros_message;
+@[end if]@
+  uint8_t * _p = _buf;
+
+  if ((uintptr_t)_p & 3) {
+    _p += 4 - ((uintptr_t)_p & 3);
   }
-  if (!type_name) {
-    return "type name handle is null";
+
+@{
+align = 4
+for field in spec.fields:
+    align, substring = serialize_field(field, align)
+    print(substring)
+}@
+
+  return static_cast<uint32_t>(_p - _buf);
+}
+
+// TODO: Partial specialization functions
+
+ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
+bool deserialize_ros_msg(
+  uint8_t ** _p,
+  @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) & ros_message,
+  uint32_t * _len)
+{
+  @[if len(spec.fields) > 0]@
+  __ros_msg_type * _s = &ros_message;
+  @[else]@
+  (void) ros_message;
+  @[end if]@
+  if ((uintptr_t)*_p & 3)
+  {
+    _len -= 4 - ((uintptr_t)*_p & 3);
+    *_p += 4 - ((uintptr_t)*_p & 3);
   }
-  return "not yet implemented";
+
+  @{
+align = 4
+for field in spec.fields:
+    align, substring = deserialize_field(field, align)
+    print(substring)
+  }@
+  return true;
 }
 
 
@@ -107,29 +141,17 @@ publish__@(spec.base_type.type)(
   void *untyped_pub,
   const void *untyped_ros_message)
 {
-  //(void)untyped_topic_writer;
   (void)untyped_pub;
   const __ros_msg_type & ros_message = *(const __ros_msg_type *)untyped_ros_message;
+  // TODO memory allocation! does the buffer get passed to this function?
+  // TODO freertps currently only supports fixed-size arrays so sizeof is OK (we think?)
+  uint32_t _len = sizeof(__ros_msg_type);
+  uint8_t * buf = static_cast<uint8_t *>(calloc(_len, sizeof(uint8_t)));
+  serialize_ros_msg(ros_message, buf, _len);
 
-@[if __dds_msg_type_prefix == "std_msgs::msg::dds_::String_"]@
-  //printf(" ok to publish\n");
-  static char ser_buf[256];
-  int s_len = (int)ros_message.data.length();
-  //printf("  len = %d\n", s_len);
-  //snprintf(&ser_buf[4], sizeof(msg) - 4, "Hello World: %d", pub_count++);
-  if (s_len + 4 + 1 > (int)sizeof(ser_buf) - 5)
-    s_len = (int)sizeof(ser_buf) - 5;
-  memcpy(&ser_buf[4], &ros_message.data[0], s_len);
-  ser_buf[s_len + 5] = 0; // add a null char plz
-  //uint32_t rtps_string_len = strlen(&msg[4]) + 1;
-  *((uint32_t *)ser_buf) = s_len + 1; // add 1 for the null char at the end
   frudp_pub_t *pub = (frudp_pub_t *)untyped_pub;
-  freertps_publish(pub, (uint8_t *)ser_buf, s_len + 5);
+  freertps_publish(pub, (uint8_t *)buf, _len);
   return nullptr;
-@[else]@
-  (void)ros_message;
-  return "serialization of [@(__dds_msg_type_prefix)] not yet implemented\n";
-@[end if]@
 }
 
 
@@ -144,6 +166,7 @@ take__@(spec.base_type.type)(
   if (untyped_ros_message == 0) {
     return "invalid ros message pointer";
   };
+
   (void)untyped_topic_reader;
   (void)ignore_local_publications;
   (void)taken;
@@ -156,11 +179,6 @@ static message_type_support_callbacks_t message_type_support_callbacks = {
   "@(spec.base_type.type)",
   &publish__@(spec.base_type.type),
 };
-/*
-  &register_type__@(spec.base_type.type),
-  &take__@(spec.base_type.type)
-};
-*/
 
 static rosidl_message_type_support_t handle = {
   rosidl_typesupport_freertps_cpp::typesupport_freertps_identifier,

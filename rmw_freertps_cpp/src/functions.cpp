@@ -35,11 +35,6 @@
 
 #include <rmw/impl/cpp/macros.hpp>
 
-// hacked up temporary include, just for now as placeholder
-// the real includes will be in the auto-generated type_support.hpp
-//#include "std_msgs/msg/string__struct.hpp"
-
-
 extern "C"
 {
 #include "freertps/freertps.h"
@@ -54,7 +49,6 @@ _create_type_name(
          "::" + sep + "::dds_::" + callbacks->message_name + "_";
 }
 
-//using namespace rosidl_typesupport_freertps_cpp::impl;
 
 // The extern "C" here enforces that overloading is not used.
 extern "C"
@@ -65,155 +59,10 @@ const char * freertps_cpp_identifier = "freertps_static";
 
 struct PublisherInfo
 {
-  frudp_pub_t *pub;
-  const message_type_support_callbacks_t * callbacks;
-  /*
-  DDS::Topic * dds_topic;
-  DDS::DataWriter * topic_writer;
-  */
-};
-
-/*
-class EmptyDataReaderListener
-  : public DDS::DataReaderListener
-{
-public:
-  void on_requested_deadline_missed(
-    DDS::DataReader_ptr, const DDS::RequestedDeadlineMissedStatus &)
-  {}
-  void on_requested_incompatible_qos(
-    DDS::DataReader_ptr, const DDS::RequestedIncompatibleQosStatus &)
-  {}
-  void on_sample_rejected(
-    DDS::DataReader_ptr, const DDS::SampleRejectedStatus &)
-  {}
-  void on_liveliness_changed(
-    DDS::DataReader_ptr, const DDS::LivelinessChangedStatus &)
-  {}
-  void on_data_available(
-    DDS::DataReader_ptr)
-  {}
-  void on_subscription_matched(
-    DDS::DataReader_ptr, const DDS::SubscriptionMatchedStatus &)
-  {}
-  void on_sample_lost(
-    DDS::DataReader_ptr, const DDS::SampleLostStatus &)
-  {}
-};
-
-class CustomPublisherListener
-  : public EmptyDataReaderListener
-{
-public:
-  virtual void on_data_available(DDS::DataReader * reader)
-  {
-    DDS::PublicationBuiltinTopicDataDataReader * builtin_reader =
-      DDS::PublicationBuiltinTopicDataDataReader::_narrow(reader);
-
-    DDS::PublicationBuiltinTopicDataSeq data_seq;
-    DDS::SampleInfoSeq info_seq;
-    DDS::ReturnCode_t retcode = builtin_reader->take(
-      data_seq, info_seq, DDS::LENGTH_UNLIMITED,
-      DDS::ANY_SAMPLE_STATE, DDS::ANY_VIEW_STATE, DDS::ANY_INSTANCE_STATE);
-
-    if (retcode == DDS::RETCODE_NO_DATA) {
-      return;
-    }
-    if (retcode != DDS::RETCODE_OK) {
-      fprintf(stderr, "failed to access data from the built-in reader\n");
-      return;
-    }
-
-    for (size_t i = 0; i < data_seq.length(); ++i) {
-      if (info_seq[i].valid_data) {
-        auto & topic_types = topic_names_and_types[data_seq[i].topic_name.in()];
-        topic_types.push_back(data_seq[i].type_name.in());
-      } else {
-        // TODO(dirk-thomas) remove related topic name / type
-      }
-    }
-
-    builtin_reader->return_loan(data_seq, info_seq);
-  }
-  std::map<std::string, std::vector<std::string>> topic_names_and_types;
-};
-
-class CustomSubscriberListener
-  : public EmptyDataReaderListener
-{
-public:
-  virtual void on_data_available(DDS::DataReader * reader)
-  {
-    DDS::SubscriptionBuiltinTopicDataDataReader * builtin_reader =
-      DDS::SubscriptionBuiltinTopicDataDataReader::_narrow(reader);
-
-    DDS::SubscriptionBuiltinTopicDataSeq data_seq;
-    DDS::SampleInfoSeq info_seq;
-    DDS::ReturnCode_t retcode = builtin_reader->take(
-      data_seq, info_seq, DDS::LENGTH_UNLIMITED,
-      DDS::ANY_SAMPLE_STATE, DDS::ANY_VIEW_STATE, DDS::ANY_INSTANCE_STATE);
-
-    if (retcode == DDS::RETCODE_NO_DATA) {
-      return;
-    }
-    if (retcode != DDS::RETCODE_OK) {
-      fprintf(stderr, "failed to access data from the built-in reader\n");
-      return;
-    }
-
-    for (size_t i = 0; i < data_seq.length(); ++i) {
-      if (info_seq[i].valid_data) {
-        auto & topic_types = topic_names_and_types[data_seq[i].topic_name.in()];
-        topic_types.push_back(data_seq[i].type_name.in());
-      } else {
-        // TODO(dirk-thomas) remove related topic name / type
-      }
-    }
-
-    builtin_reader->return_loan(data_seq, info_seq);
-  }
-  std::map<std::string, std::vector<std::string>> topic_names_and_types;
-};
-
-struct OpenSpliceStaticNodeInfo
-{
-  DDS::DomainParticipant * participant;
-  CustomPublisherListener * publisher_listener;
-  CustomSubscriberListener * subscriber_listener;
-};
-
-struct OpenSpliceStaticPublisherInfo
-{
-  DDS::Topic * dds_topic;
-  DDS::Publisher * dds_publisher;
-  DDS::DataWriter * topic_writer;
+  frudp_pub_t * pub;
   const message_type_support_callbacks_t * callbacks;
 };
 
-struct OpenSpliceStaticSubscriberInfo
-{
-  DDS::Topic * dds_topic;
-  DDS::Subscriber * dds_subscriber;
-  DDS::DataReader * topic_reader;
-  DDS::ReadCondition * read_condition;
-  const message_type_support_callbacks_t * callbacks;
-  bool ignore_local_publications;
-};
-
-struct OpenSpliceStaticClientInfo
-{
-  void * requester_;
-  DDS::DataReader * response_datareader_;
-  const service_type_support_callbacks_t * callbacks_;
-};
-
-struct OpenSpliceStaticServiceInfo
-{
-  void * responder_;
-  DDS::DataReader * request_datareader_;
-  const service_type_support_callbacks_t * callbacks_;
-};
-*/
 
 const char *
 rmw_get_implementation_identifier()
@@ -236,8 +85,7 @@ rmw_create_node(const char * name, size_t domain_id)
 
   //if (!frudp_part_create(domain_id))
   // TODO(jacquelinekay): domain ID is not yet implemented in freertps (?)
-  if (!frudp_part_create())
-  {
+  if (!frudp_part_create()) {
     RMW_SET_ERROR_MSG("failed to create freertps participant");
     return nullptr;
   }
@@ -252,7 +100,6 @@ rmw_create_node(const char * name, size_t domain_id)
   node->data = nullptr;
 
   frudp_disco_tick();
-  //RMW_SET_ERROR_MSG("not yet implemented");
   return node;
 }
 
@@ -298,33 +145,32 @@ rmw_create_publisher(
     type support,
     type_support->typesupport_identifier, typesupport_freertps_identifier,
     return nullptr)
-  (void)qos_profile; // todo: figure out what to do with this. maybe
-                     // return an error if anything complicated is requested?
+    (void) qos_profile; // todo: figure out what to do with this. maybe
+                        // return an error if anything complicated is requested?
 
-  const message_type_support_callbacks_t *callbacks =
+  const message_type_support_callbacks_t * callbacks =
     static_cast<const message_type_support_callbacks_t *>(type_support->data);
   // todo: deal with dynamic memory created here
   std::string type_name = _create_type_name(callbacks, "msg");
   printf("rmw_create_publisher(%s, %s)\n",
-         topic_name,
-         type_name.c_str());
+    topic_name,
+    type_name.c_str());
 
-  rmw_publisher_t *publisher = rmw_publisher_allocate();
+  rmw_publisher_t * publisher = rmw_publisher_allocate();
   if (!publisher) {
     RMW_SET_ERROR_MSG("failed to allocate rmw_publisher_t");
     return nullptr;
   }
 
-  frudp_pub_t *freertps_pub = nullptr;
-  if (strcmp(topic_name, "parameter_events"))
+  frudp_pub_t * freertps_pub = nullptr;
+  if (strcmp(topic_name, "parameter_events")) {
     freertps_pub = freertps_create_pub(topic_name, type_name.c_str());
-  else
-  {
+  } else {
     printf("refusing to create parameter_events topic\n");
   }
 
-  PublisherInfo *pub_info = static_cast<PublisherInfo *>(
-                              rmw_allocate(sizeof(PublisherInfo)));
+  PublisherInfo * pub_info = static_cast<PublisherInfo *>(
+    rmw_allocate(sizeof(PublisherInfo)));
   pub_info->pub = freertps_pub;
   pub_info->callbacks = callbacks;
 
@@ -355,7 +201,6 @@ rmw_destroy_publisher(rmw_node_t * node, rmw_publisher_t * publisher)
     publisher->implementation_identifier, freertps_cpp_identifier,
     return RMW_RET_ERROR)
 
-  //auto result = RMW_RET_OK;
   auto result = RMW_RET_ERROR;
   RMW_SET_ERROR_MSG("rmw_destroy_publisher() not yet implemented");
   return result;
@@ -382,14 +227,13 @@ rmw_publish(const rmw_publisher_t * publisher, const void * ros_message)
     RMW_SET_ERROR_MSG("publisher info handle is null");
     return RMW_RET_ERROR;
   }
-  const message_type_support_callbacks_t *callbacks = pub_info->callbacks;
+  const message_type_support_callbacks_t * callbacks = pub_info->callbacks;
   if (!callbacks) {
     RMW_SET_ERROR_MSG("callbacks handle is null");
     return RMW_RET_ERROR;
   }
-  frudp_pub_t *fr_pub = pub_info->pub;
-  if (!fr_pub)
-  {
+  frudp_pub_t * fr_pub = pub_info->pub;
+  if (!fr_pub) {
     RMW_SET_ERROR_MSG("hey, fr_pub is empty. uh oh...\n");
     return RMW_RET_ERROR;
   }
@@ -399,34 +243,6 @@ rmw_publish(const rmw_publisher_t * publisher, const void * ros_message)
     return RMW_RET_ERROR;
   }
   return RMW_RET_OK;
- 
-  // here is where we'll call into serialization someday. for now, serialize
-  // it by hand here, just for std_msgs::string
-  /*
-  if (strcmp(pub->type_name, "std_msgs::msg::dds_::String_"))
-  {
-    printf("woah. i don't know how to serialize [%s]\n", 
-           pub_info->pub->type_name);
-    RMW_SET_ERROR_MSG("unable to serialize type");
-    return RMW_RET_ERROR;
-  }
-  printf("about to serialize...\n");
-  */
-  /*
-  const std_msgs::msg::String *s = static_cast<const std_msgs::msg::String *>(ros_message);
-  static char ser_buf[256];
-  int s_len = (int)s->data.length();
-  //printf("  len = %d\n", s_len);
-  //snprintf(&ser_buf[4], sizeof(msg) - 4, "Hello World: %d", pub_count++);
-  if (s_len + 4 + 1 > (int)sizeof(ser_buf) - 5)
-    s_len = (int)sizeof(ser_buf) - 5;
-  memcpy(&ser_buf[4], &s->data[0], s_len);
-  ser_buf[s_len + 5] = 0; // add a null char plz
-  //uint32_t rtps_string_len = strlen(&msg[4]) + 1;
-  *((uint32_t *)ser_buf) = s_len + 1; // add 1 for the null char at the end
-  freertps_publish(pub, (uint8_t *)ser_buf, s_len + 5);
-  return RMW_RET_OK;
-  */
 }
 
 rmw_subscription_t *
@@ -511,11 +327,21 @@ rmw_take(const rmw_subscription_t * subscription, void * ros_message, bool * tak
   return RMW_RET_ERROR; // todo: not this
 }
 
+rmw_ret_t
+rmw_take_with_info(
+  const rmw_subscription_t * subscription,
+  void * ros_message,
+  bool * taken,
+  rmw_message_info_t * message_info)
+{
+  RMW_SET_ERROR_MSG("rmw_take_with_info() not yet implemented");
+  return RMW_RET_ERROR;
+}
+
+
 rmw_guard_condition_t *
 rmw_create_guard_condition()
 {
-  //RMW_SET_ERROR_MSG("rmw_create_guard_condition() not yet implemented");
-  //return nullptr; // todo: not this
   printf("rmw_guard_condition alloc\r\n");
   rmw_guard_condition_t * guard_condition = rmw_guard_condition_allocate();
   if (!guard_condition) {
@@ -539,8 +365,9 @@ rmw_destroy_guard_condition(rmw_guard_condition_t * guard_condition)
     guard condition handle,
     guard_condition->implementation_identifier, freertps_cpp_identifier,
     return RMW_RET_ERROR)
-  auto result = RMW_RET_OK;
-  return result;
+
+  RMW_SET_ERROR_MSG("rmw_trigger_guard_condition() not yet implemented");
+  return RMW_RET_ERROR;
 }
 
 rmw_ret_t
@@ -555,9 +382,22 @@ rmw_trigger_guard_condition(const rmw_guard_condition_t * guard_condition)
     guard_condition->implementation_identifier, freertps_cpp_identifier,
     return RMW_RET_ERROR)
 
-  //RMW_SET_ERROR_MSG("rmw_trigger_guard_condition() not yet implemented");
-  //return RMW_RET_ERROR;
-  return RMW_RET_OK;
+  RMW_SET_ERROR_MSG("rmw_trigger_guard_condition() not yet implemented");
+  return RMW_RET_ERROR;
+}
+
+rmw_waitset_t *
+rmw_create_waitset(rmw_guard_conditions_t * fixed_guard_conditions, size_t max_conditions)
+{
+  RMW_SET_ERROR_MSG("rmw_create_waitset() not yet implemented");
+  return nullptr;
+}
+
+rmw_ret_t
+rmw_destroy_waitset(rmw_waitset_t * waitset)
+{
+  RMW_SET_ERROR_MSG("rmw_destroy_waitset() not yet implemented");
+  return RMW_RET_ERROR;
 }
 
 rmw_ret_t
@@ -566,6 +406,7 @@ rmw_wait(
   rmw_guard_conditions_t * guard_conditions,
   rmw_services_t * services,
   rmw_clients_t * clients,
+  rmw_waitset_t * waitset,
   const rmw_time_t * wait_timeout)
 {
   (void)subscriptions;
@@ -573,24 +414,19 @@ rmw_wait(
   (void)clients;
   (void)wait_timeout;
   (void)guard_conditions;
+  (void)waitset;
   const uint32_t max_usecs = wait_timeout->nsec / 1000 +
-                             wait_timeout->sec * 1000000;
+    wait_timeout->sec * 1000000;
   printf("rmw_wait(%d)\n", (int)max_usecs);
   frudp_listen(max_usecs);
 
   static double t_prev_disco = 0; // stayin alive
   const double t_now = fr_time_now_double();
-  if (t_now - t_prev_disco > 1.0) // disco every second. stayin alive.
-  {
+  if (t_now - t_prev_disco > 1.0) { // disco every second. stayin alive.
     t_prev_disco = t_now;
     frudp_disco_tick();
-    //printf("disco tick\n");
   }
   return RMW_RET_OK;
-  /*
-  RMW_SET_ERROR_MSG("rmw_wait not implemented");
-  return RMW_RET_ERROR;
-  */
 }
 
 rmw_client_t *
@@ -692,7 +528,7 @@ destroy_topic_names_and_types(
 {
   (void)topic_names_and_types;
   printf("rmw_destroy_topic_names_and_types() not yet implemented\n");
-  return; // not yet implemented
+  // not yet implemented
   /*
   if (topic_names_and_types->topic_count) {
     for (size_t i = 0; i < topic_names_and_types->topic_count; ++i) {
@@ -878,7 +714,7 @@ rmw_count_publishers(
   }
   RMW_SET_ERROR_MSG("rmw_count_publishers() not yet implemented");
   return RMW_RET_ERROR;
-  /* 
+  /*
   auto node_info = static_cast<OpenSpliceStaticNodeInfo *>(node->data);
   if (!node_info) {
     RMW_SET_ERROR_MSG("node info handle is null");
@@ -898,6 +734,19 @@ rmw_count_publishers(
   }
   return RMW_RET_OK;
   */
+}
+
+rmw_ret_t
+rmw_get_gid_for_publisher(const rmw_publisher_t * publisher, rmw_gid_t * gid)
+{
+  RMW_SET_ERROR_MSG("rmw_get_gid_for_publisher() not yet implemented");
+  return RMW_RET_ERROR;
+}
+rmw_ret_t
+rmw_compare_gids_equal(const rmw_gid_t * gid1, const rmw_gid_t * gid2, bool * result)
+{
+  RMW_SET_ERROR_MSG("rmw_compare_gids_equal() not yet implemented");
+  return RMW_RET_ERROR;
 }
 
 rmw_ret_t
