@@ -24,17 +24,17 @@
 #include "@(spec.pkg_name)/srv/@(header_file_name)__struct.hpp"
 @{req_header_file_name = get_header_filename_from_msg_name(spec.srv_name + '_Request')}@
 @{res_header_file_name = get_header_filename_from_msg_name(spec.srv_name + '_Response')}@
-#include "@(spec.pkg_name)/srv/dds_freertps/@(req_header_file_name)__type_support.hpp"
-#include "@(spec.pkg_name)/srv/dds_freertps/@(res_header_file_name)__type_support.hpp"
+#include "@(spec.pkg_name)/srv/freertps/@(req_header_file_name)__type_support.hpp"
+#include "@(spec.pkg_name)/srv/freertps/@(res_header_file_name)__type_support.hpp"
 
 #include "rosidl_typesupport_freertps_cpp/identifier.hpp"
 #include "rosidl_typesupport_freertps_cpp/service_type_support.h"
 
 @{
-# Same as @(spec.pkg_name)::srv::dds_::@(spec.srv_name)
-__dds_msg_type_prefix = "{spec.pkg_name}::srv::dds_::{spec.srv_name}".format(spec=spec)
-# Same as @(spec.pkg_name)::srv::dds_::Sample_@(spec.srv_name)
-__dds_sample_type_prefix = "{spec.pkg_name}::srv::dds_::Sample_{spec.srv_name}".format(spec=spec)
+# Same as @(spec.pkg_name)::srv::freertps::@(spec.srv_name)
+__dds_msg_type_prefix = "{spec.pkg_name}::srv::freertps::{spec.srv_name}".format(spec=spec)
+# Same as @(spec.pkg_name)::srv::freertps::Sample_@(spec.srv_name)
+__dds_sample_type_prefix = "{spec.pkg_name}::srv::freertps::Sample_{spec.srv_name}".format(spec=spec)
 }@
 
 

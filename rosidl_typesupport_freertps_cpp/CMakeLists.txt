@@ -19,7 +19,6 @@ ament_export_dependencies(rmw)
 ament_export_dependencies(rosidl_cmake)
 ament_export_dependencies(rosidl_generator_c)
 ament_export_dependencies(rosidl_generator_cpp)
-ament_export_dependencies(rosidl_generator_dds_idl)
 # The reason the impl folder is exported is that it contains the implementation
 # for the get_*_type_support_handle functions and defines the freertps
 # specific version of these functions.
@@ -41,6 +40,57 @@ ament_export_libraries(${PROJECT_NAME})
 if(AMENT_ENABLE_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+
+  set(message_files
+    "msg/BoundedArrayBounded.msg"
+    "msg/BoundedArrayStatic.msg"
+    "msg/BoundedArrayUnbounded.msg"
+
+    "msg/Empty.msg"
+    "msg/LargeArray.msg"
+
+    "msg/PrimitiveStaticArrays.msg"
+
+    "msg/PrimitivesBounded.msg"
+    "msg/PrimitivesStatic.msg"
+    "msg/PrimitivesUnbounded.msg"
+
+    "msg/StaticArrayBounded.msg"
+    "msg/StaticArrayStatic.msg"
+    "msg/StaticArrayUnbounded.msg"
+
+    "msg/UnboundedArrayBounded.msg"
+    "msg/UnboundedArrayStatic.msg"
+    "msg/UnboundedArrayUnbounded.msg"
+  )
+
+  include(cmake/register_cpp.cmake)
+  set(rosidl_typesupport_freertps_cpp_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+  rosidl_typesupport_freertps_cpp_extras(
+    "${CMAKE_CURRENT_SOURCE_DIR}/bin/rosidl_typesupport_freertps_cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/rosidl_typesupport_freertps_cpp/__init__.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/resource"
+  )
+
+  rosidl_generate_interfaces(${PROJECT_NAME}_msgs ${message_files}
+    SKIP_INSTALL
+  )
+
+  ament_add_gtest(test_serialization_cpp test/test_serialization.cpp)
+  if(TARGET test_serialization_cpp)
+    target_link_libraries(test_serialization_cpp
+      ${PROJECT_NAME}_msgs__rosidl_typesupport_freertps_cpp
+      ${_AMENT_EXPORT_ABSOLUTE_LIBRARIES}
+      ${_AMENT_EXPORT_LIBRARY_TARGETS})
+    # include the built files directly, instead of their install location
+    target_include_directories(test_serialization_cpp
+      PUBLIC
+      "${CMAKE_CURRENT_BINARY_DIR}/rosidl_typesupport_freertps_cpp"
+      "${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp"
+    )
+    add_dependencies(test_serialization_cpp ${PROJECT_NAME} rosidl_generator_cpp)
+  endif()
 endif()
 
 ament_package(

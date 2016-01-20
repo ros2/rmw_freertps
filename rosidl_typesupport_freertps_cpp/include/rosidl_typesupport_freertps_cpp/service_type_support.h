@@ -13,8 +13,8 @@
 // limitations under the License.
 
 
-#ifndef ROSIDL_TYPESUPPORT_FREERTPS_CPP_ROSIDL_TYPESUPPORT_FREERTPS_CPP_SERVICE_TYPE_SUPPORT_H_
-#define ROSIDL_TYPESUPPORT_FREERTPS_CPP_ROSIDL_TYPESUPPORT_FREERTPS_CPP_SERVICE_TYPE_SUPPORT_H_
+#ifndef ROSIDL_TYPESUPPORT_FREERTPS_CPP__SERVICE_TYPE_SUPPORT_H_
+#define ROSIDL_TYPESUPPORT_FREERTPS_CPP__SERVICE_TYPE_SUPPORT_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -67,4 +67,4 @@ typedef struct service_type_support_callbacks_t
     void * requester, void * ros_request_header, void * ros_response, bool * taken);
 } service_type_support_callbacks_t;
 
-#endif  /* ROSIDL_TYPESUPPORT_FREERTPS_CPP_ROSIDL_TYPESUPPORT_FREERTPS_CPP_SERVICE_TYPE_SUPPORT_H_ */
+#endif  // ROSIDL_TYPESUPPORT_FREERTPS_CPP__SERVICE_TYPE_SUPPORT_H_

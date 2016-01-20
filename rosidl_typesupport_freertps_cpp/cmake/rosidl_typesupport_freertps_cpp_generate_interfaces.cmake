@@ -1,4 +1,4 @@
-# Copyright 2014-2016 Open Source Robotics Foundation, Inc.
+# Copyright 2016 Open Source Robotics Foundation, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ foreach(_idl_file ${rosidl_generate_interfaces_IDL_FILES})
     get_filename_component(_parent_folder "${_idl_file}" DIRECTORY)
     get_filename_component(_parent_folder "${_parent_folder}" NAME)
     list(APPEND _generated_msg_files
-      "${_output_path}/${_parent_folder}/dds_freertps/${_header_name}__type_support.hpp"
-      "${_output_path}/${_parent_folder}/dds_freertps/${_header_name}__type_support.cpp")
+      "${_output_path}/${_parent_folder}/freertps/${_header_name}__type_support.hpp"
+      "${_output_path}/${_parent_folder}/freertps/${_header_name}__type_support.cpp")
   elseif("${_extension} " STREQUAL ".srv ")
-    list(APPEND _generated_srv_files "${_output_path}/srv/dds_freertps/${_header_name}__type_support.cpp")
+    list(APPEND _generated_srv_files "${_output_path}/srv/freertps/${_header_name}__type_support.cpp")
   else()
     message(FATAL_ERROR "Interface file with unknown extension: ${_idl_file}")
   endif()
@@ -55,7 +55,6 @@ foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
     if("${_extension} " STREQUAL ".msg ")
       get_filename_component(_parent_folder "${_idl_file}" DIRECTORY)
       get_filename_component(_parent_folder "${_parent_folder}" NAME)
-      # ignore builtin_interfaces since it does not have any idl files
       set(_abs_idl_file "${${_pkg_name}_DIR}/../${_idl_file}")
       normalize_path(_abs_idl_file "${_abs_idl_file}")
       list(APPEND _dependencies "${_pkg_name}:${_abs_idl_file}")
@@ -103,29 +102,20 @@ add_custom_command(
 
 # generate header to switch between export and import for a specific package on Windows
 set(_visibility_control_file
-  "${_output_path}/msg/dds_freertps/visibility_control.h")
+  "${_output_path}/msg/freertps/visibility_control.h")
 configure_file(
   "${rosidl_typesupport_freertps_cpp_TEMPLATE_DIR}/visibility_control.h.in"
   "${_visibility_control_file}"
   @ONLY
 )
 list(APPEND _generated_msg_files "${_visibility_control_file}")
-
-if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
-  install(
-    FILES ${_generated_msg_files}
-    DESTINATION "include/${PROJECT_NAME}/msg/dds_freertps"
-  )
-  install(
-    FILES ${_generated_srv_files}
-    DESTINATION "include/${PROJECT_NAME}/srv/dds_freertps"
-  )
 endif()
 
 link_directories(${freertps_LIBRARY_DIRS})
 add_library(${rosidl_generate_interfaces_TARGET}${_target_suffix} SHARED
   ${_generated_msg_files}
   ${_generated_srv_files})
+target_link_libraries(${rosidl_generate_interfaces_TARGET}${_target_suffix} ${freertps_LIBRARIES})
 if(WIN32)
   target_compile_definitions(${rosidl_generate_interfaces_TARGET}${_target_suffix}
     PRIVATE "ROSIDL_BUILDING_DLL")
@@ -138,13 +128,14 @@ target_include_directories(${rosidl_generate_interfaces_TARGET}${_target_suffix}
   PUBLIC
   ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp
   ${CMAKE_CURRENT_BINARY_DIR}/rosidl_typesupport_freertps_cpp
-  "${_output_path}/msg/dds_freertps"
-  "${_output_path}/srv/dds_freertps"
+  include/${PROJECT_NAME}/impl
+  "${_output_path}/msg/freertps"
+  "${_output_path}/srv/freertps"
 )
 ament_target_dependencies(${rosidl_generate_interfaces_TARGET}${_target_suffix} "rmw")
 foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
-  set(_msg_include_dir "${${_pkg_name}_DIR}/../../../include/${_pkg_name}/msg/dds_freertps")
-  set(_srv_include_dir "${${_pkg_name}_DIR}/../../../include/${_pkg_name}/srv/dds_freertps")
+  set(_msg_include_dir "${${_pkg_name}_DIR}/../../../include/${_pkg_name}/msg/freertps")
+  set(_srv_include_dir "${${_pkg_name}_DIR}/../../../include/${_pkg_name}/srv/freertps")
   normalize_path(_msg_include_dir "${_msg_include_dir}")
   normalize_path(_srv_include_dir "${_srv_include_dir}")
   target_include_directories(${rosidl_generate_interfaces_TARGET}${_target_suffix}
@@ -171,6 +162,18 @@ add_dependencies(
 )
 
 if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
+  ament_export_include_directories(include)
+  install(
+    FILES ${_generated_msg_files}
+    DESTINATION "include/${PROJECT_NAME}/msg/freertps"
+  )
+  install(
+    FILES ${_generated_srv_files}
+    DESTINATION "include/${PROJECT_NAME}/srv/freertps"
+  )
+
+if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
+  ament_export_libraries(${rosidl_generate_interfaces_TARGET}${_target_suffix})
   install(
     TARGETS ${rosidl_generate_interfaces_TARGET}${_target_suffix}
     ARCHIVE DESTINATION lib
@@ -178,7 +181,3 @@ if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
     RUNTIME DESTINATION bin
   )
 endif()
-
-ament_export_libraries(${rosidl_generate_interfaces_TARGET}${_target_suffix} ${freertps_LIBRARIES})
-
-ament_export_include_directories(include)

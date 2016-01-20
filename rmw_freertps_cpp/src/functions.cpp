@@ -13,27 +13,26 @@
 // limitations under the License.
 
 #include <cassert>
+#include <cstring>
 #include <iostream>
 #include <limits>
 #include <map>
 #include <set>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 #include <vector>
-#include <cstring>
 
-#include <rmw/allocators.h>
-#include <rmw/error_handling.h>
-#include <rmw/impl/cpp/macros.hpp>
-#include <rmw/rmw.h>
-#include <rosidl_generator_c/message_type_support.h>
-#include <rosidl_generator_c/service_type_support.h>
-#include <rosidl_typesupport_freertps_cpp/identifier.hpp>
-#include <rosidl_typesupport_freertps_cpp/impl/error_checking.hpp>
-#include <rosidl_typesupport_freertps_cpp/message_type_support.h>
-#include <rosidl_typesupport_freertps_cpp/service_type_support.h>
+#include "rmw/allocators.h"
+#include "rmw/impl/cpp/macros.hpp"
+#include "rmw/rmw.h"
 
-#include <rmw/impl/cpp/macros.hpp>
+#include "rosidl_generator_c/message_type_support.h"
+#include "rosidl_generator_c/service_type_support.h"
+#include "rosidl_typesupport_freertps_cpp/identifier.hpp"
+#include "rosidl_typesupport_freertps_cpp/message_type_support.h"
+#include "rosidl_typesupport_freertps_cpp/service_type_support.h"
+
 
 extern "C"
 {
@@ -53,7 +52,6 @@ _create_type_name(
 // The extern "C" here enforces that overloading is not used.
 extern "C"
 {
-
 using rosidl_typesupport_freertps_cpp::typesupport_freertps_identifier;
 const char * freertps_cpp_identifier = "freertps_static";
 
@@ -81,9 +79,8 @@ rmw_init()
 rmw_node_t *
 rmw_create_node(const char * name, size_t domain_id)
 {
-  (void)name; // need to stash this somewhere
+  (void)name;  // need to stash this somewhere
 
-  //if (!frudp_part_create(domain_id))
   // TODO(jacquelinekay): domain ID is not yet implemented in freertps (?)
   if (!frudp_part_create()) {
     RMW_SET_ERROR_MSG("failed to create freertps participant");
@@ -94,7 +91,7 @@ rmw_create_node(const char * name, size_t domain_id)
   if (!node) {
     RMW_SET_ERROR_MSG("failed to allocate rmw_node_t");
     return nullptr;
-    //goto fail;
+    // goto fail;
   }
   node->implementation_identifier = freertps_cpp_identifier;
   node->data = nullptr;
@@ -145,8 +142,8 @@ rmw_create_publisher(
     type support,
     type_support->typesupport_identifier, typesupport_freertps_identifier,
     return nullptr)
-    (void) qos_profile; // todo: figure out what to do with this. maybe
-                        // return an error if anything complicated is requested?
+    (void) qos_profile;  // todo: figure out what to do with this. maybe
+                         // return an error if anything complicated is requested?
 
   const message_type_support_callbacks_t * callbacks =
     static_cast<const message_type_support_callbacks_t *>(type_support->data);
@@ -299,7 +296,7 @@ rmw_destroy_subscription(rmw_node_t * node, rmw_subscription_t * subscription)
     subscription->implementation_identifier, freertps_cpp_identifier,
     return RMW_RET_ERROR)
   RMW_SET_ERROR_MSG("rmw_destroy_subscription() not yet implemented");
-  return RMW_RET_ERROR; // todo: not this
+  return RMW_RET_ERROR;  // todo: not this
 }
 
 rmw_ret_t
@@ -324,7 +321,7 @@ rmw_take(const rmw_subscription_t * subscription, void * ros_message, bool * tak
     return RMW_RET_ERROR;
   }
   RMW_SET_ERROR_MSG("rmw_take() not yet implemented");
-  return RMW_RET_ERROR; // todo: not this
+  return RMW_RET_ERROR;  // todo: not this
 }
 
 rmw_ret_t
@@ -347,7 +344,6 @@ rmw_create_guard_condition()
   if (!guard_condition) {
     RMW_SET_ERROR_MSG("failed to allocate guard condition");
     return nullptr;
-    //goto fail;
   }
   guard_condition->implementation_identifier = freertps_cpp_identifier;
   guard_condition->data = nullptr;
@@ -417,12 +413,12 @@ rmw_wait(
   (void)waitset;
   const uint32_t max_usecs = wait_timeout->nsec / 1000 +
     wait_timeout->sec * 1000000;
-  printf("rmw_wait(%d)\n", (int)max_usecs);
+  printf("rmw_wait(%d)\n", static_cast<int>(max_usecs));
   frudp_listen(max_usecs);
 
-  static double t_prev_disco = 0; // stayin alive
+  static double t_prev_disco = 0;  // stayin alive
   const double t_now = fr_time_now_double();
-  if (t_now - t_prev_disco > 1.0) { // disco every second. stayin alive.
+  if (t_now - t_prev_disco > 1.0) {  // disco every second. stayin alive.
     t_prev_disco = t_now;
     frudp_disco_tick();
   }
@@ -794,5 +790,4 @@ rmw_count_subscribers(
   return RMW_RET_OK;
   */
 }
-
 }  // extern "C"

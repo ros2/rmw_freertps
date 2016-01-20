@@ -12,9 +12,10 @@
 @#  - get_header_filename_from_msg_name (function)
 @#######################################################################
 @
+#include <cmath>
+#include <cstring>
 #include <limits>
 #include <stdexcept>
-#include <cstring>
 
 extern "C"
 {
@@ -22,135 +23,455 @@ extern "C"
 #include "freertps/freertps.h"
 }
 
-#include <rosidl_generator_c/message_type_support.h>
+#include "rosidl_generator_c/message_type_support.h"
 // this is defined in the rosidl_typesupport_freertps_cpp package and
 // is in the include/rosidl_typesupport_freertps_cpp/impl folder
-#include <rosidl_generator_cpp/message_type_support.hpp>
-#include <rosidl_typesupport_freertps_cpp/visibility_control.h>
+#include "rosidl_generator_cpp/message_type_support.hpp"
 
 @{header_file_name = get_header_filename_from_msg_name(spec.base_type.type)}@
+#include "@(spec.base_type.pkg_name)/@(subfolder)/freertps/@(header_file_name)__type_support.hpp"
 #include "@(spec.base_type.pkg_name)/@(subfolder)/@(header_file_name)__struct.hpp"
-#include "@(spec.base_type.pkg_name)/@(subfolder)/dds_freertps/@(header_file_name)__type_support.hpp"
+
 #include "rosidl_typesupport_freertps_cpp/identifier.hpp"
-#include <rosidl_typesupport_freertps_cpp/message_type_support.h>
+#include "rosidl_typesupport_freertps_cpp/message_type_support.h"
+#include "rosidl_typesupport_freertps_cpp/visibility_control.h"
 
 // forward declaration of conversion functions for message dependencies
-@[for field in spec.fields]@
-    @[if not field.type.is_primitive_type()]@
-@{
-dependency_subfolder = "msg"
-if field.type.type.endswith("Request") or field.type.type.endswith("Response"):
-    dependency_subfolder = "srv"
-}@
+@[for field in spec.fields]@[
+    if not field.type.is_primitive_type()]
 namespace @(field.type.pkg_name)
 {
-namespace @(dependency_subfolder)
+namespace msg
 {
 namespace typesupport_freertps_cpp
 {
 
+uint32_t get_buffer_size(
+  const @(field.type.pkg_name)::msg::@(field.type.type) * ros_message);
+
+uint32_t allocate_buffer_for_ros_msg(
+  const @(field.type.pkg_name)::msg::@(field.type.type) * ros_message,
+  uint8_t * & _buf);
+
 uint32_t serialize_ros_msg(
-  const @(field.type.pkg_name)::@(dependency_subfolder)::@(field.type.type) & ros_message,
+  const @(field.type.pkg_name)::msg::@(field.type.type) * ros_message,
   uint8_t * _buf,
   uint32_t _buf_size);
 
 bool deserialize_ros_msg(
   uint8_t ** message_pointer,
-  @(field.type.pkg_name)::@(dependency_subfolder)::@(field.type.type) & ros_message,
+  @(field.type.pkg_name)::msg::@(field.type.type) * ros_message,
   uint32_t * length);
 
 }  // namespace typesupport_freertps_cpp
 }  // namespace msg
 }  // namespace @(field.type.pkg_name)
 
-    @[end if]@
-@[end for]@
-
+@[   end if]@[
+end for]
 namespace @(spec.base_type.pkg_name)
 {
-
 namespace @(subfolder)
 {
-
 namespace typesupport_freertps_cpp
 {
 
-
 typedef @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) __ros_msg_type;
+
+
+ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
+uint32_t get_buffer_size(const __ros_msg_type * _s)
+{
+@[if len(spec.fields) == 0 or all(field.type.is_primitive_type() for field in spec.fields)
+]  (void) _s;
+@[end if
+]  uint32_t _len = 0;
+@[for field in spec.fields]@[
+    if field.type.is_primitive_type()]@[
+        if not field.type.is_array]@[
+            if field.type.type == 'string']
+@# String type
+@enforce_alignment_buffer_size(4)
+  _len += sizeof(uint32_t);
+  _len += _s->@(field.name).size() + 1;@[
+            else]
+@# Numeric type
+@enforce_alignment_buffer_size(get_alignment(field.type.type))
+  _len += sizeof(@(msg_type_to_cpp(field.type.type)));@[
+            end if]@[
+        elif field.type.array_size]@[
+            if field.type.type == 'string']
+@# Fixed array of strings
+  for (size_t i = 0; i < @(field.type.array_size); ++i) {
+@enforce_alignment_buffer_size(4, 4)
+    _len += sizeof(uint32_t);
+    _len += _s->@(field.name)[i].size() + 1;
+  }
+@[            else]
+@# Fixed size array of numeric types
+@enforce_alignment_buffer_size(get_alignment(field.type.type))
+  _len += @(field.type.array_size) * sizeof(@(msg_type_to_cpp(field.type.type)));@[
+            end if]@[
+        else]@[
+            if field.type.type == 'string']
+@# Variable size array of string
+@enforce_alignment_buffer_size(4)
+  _len += sizeof(uint32_t);
+  for (size_t i = 0; i < _s->@(field.name).size(); ++i) {
+@enforce_alignment_buffer_size(4,4)
+    _len += sizeof(uint32_t);
+    _len += _s->@(field.name)[i].size() + 1;
+  }
+@[            else]
+@enforce_alignment_buffer_size(4)
+  _len += sizeof(uint32_t);
+@enforce_alignment_buffer_size(get_alignment(field.type.type))
+  _len += _s->@(field.name).size() * sizeof(@(msg_type_to_cpp(field.type.type)));
+@[            end if]@[
+        end if]@[
+    else]@[
+        if not field.type.is_array]
+  _len += @(field.type.pkg_name)::msg::typesupport_freertps_cpp::get_buffer_size(
+    &_s->@(field.name));
+@[        elif field.type.array_size]
+  for (size_t i = 0; i < @(field.type.array_size); ++i) {
+    _len += @(field.type.pkg_name)::msg::typesupport_freertps_cpp::get_buffer_size(
+      &_s->@(field.name)[i]);
+  }
+@[        else]
+@enforce_alignment_buffer_size(4)
+  _len += sizeof(uint32_t);
+  for (auto entry : _s->@(field.name)) {
+    _len += @(field.type.pkg_name)::msg::typesupport_freertps_cpp::get_buffer_size(
+      &entry);
+  }
+@[       end if]@[
+    end if]@[
+end for]
+  return _len;
+}
+
+ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
+uint32_t allocate_buffer_for_ros_msg(const __ros_msg_type * _s, uint8_t * & _buf)
+{
+  uint32_t size = get_buffer_size(_s);
+  _buf = static_cast<uint8_t *>(calloc(1, size));
+  return size;
+}
 
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
 uint32_t serialize_ros_msg(
-  const __ros_msg_type & ros_message,
+  const __ros_msg_type * _s,
   uint8_t * _buf,
   uint32_t _buf_size)
 {
-  (void) _buf_size;
-@[if len(spec.fields) > 0]@
-  const __ros_msg_type * _s = &ros_message;
-@[else]@
-  (void) ros_message;
-@[end if]@
-  uint8_t * _p = _buf;
-
-  if ((uintptr_t)_p & 3) {
-    _p += 4 - ((uintptr_t)_p & 3);
+  if (!_buf_size) {
+    return 0;
+  }
+  if (!_buf) {
+    return 0;
   }
 
-@{
-align = 4
-for field in spec.fields:
-    align, substring = serialize_field(field, align)
-    print(substring)
-}@
-
+@[if len(spec.fields) == 0
+]  (void) _s;
+@[end if
+]  uint8_t * _p = _buf;
+@[for field in spec.fields]@[
+    if field.type.is_primitive_type()]@[
+        if not field.type.is_array]@[
+            if field.type.type == 'string']
+@# Serialize string
+@enforce_alignment(4)
+  uint32_t _@(field.name)_len = (uint32_t) _s->@(field.name).length() + 1;
+  *(reinterpret_cast<uint32_t *>(_p)) = _@(field.name)_len;
+  _p += sizeof(uint32_t);
+  for (size_t i = 0; i < _@(field.name)_len - 1; ++i) {
+    *(reinterpret_cast<char *>(_p)) = _s->@(field.name)[i];
+    _p += sizeof(char);
+  }
+  *(reinterpret_cast<char *>(_p)) = '\0';
+  ++_p;
+@[            else]
+@# Serialize numeric type
+@enforce_alignment(get_alignment(field.type.type))
+  *(reinterpret_cast<@(msg_type_to_cpp(field.type.type)) *>(_p)) = _s->@(field.name);
+  _p += sizeof(@(msg_type_to_cpp(field.type.type)));
+@[            end if]@[
+        elif field.type.array_size]@[
+            if field.type.type == 'string']
+@# Serialize fixed array of strings
+  for (size_t j = 0; j < @(field.type.array_size); j++) {
+@enforce_alignment(4, 4)
+    uint32_t _@(field.name)_len = static_cast<uint32_t>(_s->@(field.name)[j].length()) + 1;
+    *(reinterpret_cast<uint32_t *>(_p)) = _@(field.name)_len;
+    _p += sizeof(uint32_t);
+    for (size_t i = 0; i < _@(field.name)_len - 1; ++i) {
+      *(reinterpret_cast<char *>(_p)) = _s->@(field.name)[j][i];
+      _p += sizeof(char);
+    }
+    *(reinterpret_cast<char *>(_p)) = '\0';
+    ++_p;
+  }
+@[            else]
+@# Serialize fixed array of numeric types
+@enforce_alignment(get_alignment(field.type.type))
+  for (size_t i = 0; i < @(field.type.array_size); i++) {
+    *(reinterpret_cast<@(msg_type_to_cpp(field.type.type)) *>(_p)) = _s->@(field.name)[i];
+    _p += sizeof(@(msg_type_to_cpp(field.type.type)));
+  }
+@[            end if]@[
+        else]@[
+            if field.type.type == 'string']
+@# Serialize variable array of strings
+@enforce_alignment(4)
+  uint32_t _@(field.name)_len = _s->@(field.name).size();
+  *(reinterpret_cast<uint32_t *>(_p)) = _@(field.name)_len;
+  _p += sizeof(uint32_t);
+  for (size_t j = 0; j < _@(field.name)_len; j++) {
+@enforce_alignment(4, 4)
+    uint32_t _@(field.name)_strlen = static_cast<uint32_t>(_s->@(field.name)[j].length()) + 1;
+    *(reinterpret_cast<uint32_t *>(_p)) = _@(field.name)_strlen;
+    _p += sizeof(uint32_t);
+    for (size_t i = 0; i < _@(field.name)_strlen - 1; ++i) {
+      *(reinterpret_cast<char *>(_p)) = _s->@(field.name)[j][i];
+      _p += sizeof(char);
+    }
+    *(reinterpret_cast<char *>(_p)) = '\0';
+    ++_p;
+  }
+@[            else]
+@# Serialize fixed array of strings
+@enforce_alignment(4)
+  uint32_t _@(field.name)_len = _s->@(field.name).size();
+  *(reinterpret_cast<uint32_t *>(_p)) = _@(field.name)_len;
+  _p += sizeof(uint32_t);
+@enforce_alignment(get_alignment(field.type.type))
+  for (size_t i = 0; i < _@(field.name)_len; i++) {
+    *(reinterpret_cast<@(msg_type_to_cpp(field.type.type)) *>(_p)) = _s->@(field.name)[i];
+    _p += sizeof(@(msg_type_to_cpp(field.type.type)));
+  }
+@[            end if]@[
+        end if]@[
+    else]@[
+        if not field.type.is_array]
+@# Serialize struct
+  _p += @(field.type.pkg_name)::msg::typesupport_freertps_cpp::serialize_ros_msg(
+    &_s->@(field.name), _p, _buf_size - (_p - _buf));
+@[        elif field.type.array_size]
+@# Serialize fixed array of structs
+  for (size_t i = 0; i < @(field.type.array_size); i++) {
+    _p += @(field.type.pkg_name)::msg::typesupport_freertps_cpp::serialize_ros_msg(
+      &_s->@(field.name)[i], _p, _buf_size - (_p - _buf));
+  }
+@[        else]
+@# Serialize variable array of structs
+@enforce_alignment(4)
+  *(reinterpret_cast<uint32_t *>(_p)) = static_cast<uint32_t>(_s->@(field.name).size());
+  _p += sizeof(uint32_t);
+  for (size_t i = 0; i < _s->@(field.name).size(); i++) {
+    _p += @(field.type.pkg_name)::msg::typesupport_freertps_cpp::serialize_ros_msg(
+      &_s->@(field.name)[i], _p, _buf_size - (_p - _buf));
+  }
+@[        end if]@[
+    end if]@[
+end for]
   return static_cast<uint32_t>(_p - _buf);
 }
-
-// TODO: Partial specialization functions
 
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
 bool deserialize_ros_msg(
   uint8_t ** _p,
-  @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) & ros_message,
+  @(spec.base_type.pkg_name)::@(subfolder)::@(spec.base_type.type) * _s,
   uint32_t * _len)
 {
-  @[if len(spec.fields) > 0]@
-  __ros_msg_type * _s = &ros_message;
-  @[else]@
-  (void) ros_message;
-  @[end if]@
-  if ((uintptr_t)*_p & 3)
-  {
-    _len -= 4 - ((uintptr_t)*_p & 3);
-    *_p += 4 - ((uintptr_t)*_p & 3);
+@[if len(spec.fields) == 0
+]  (void) _s;
+  (void) _p;
+  (void) _len;@[
+end if]@[
+if any(field.type.is_primitive_type() or (
+    field.type.is_array and not field.type.array_size) for field in spec.fields)
+]  uint8_t * initial_p = *_p;@[
+end if]@[
+for field in spec.fields]@[
+    if field.type.is_primitive_type()]@[
+        if not field.type.is_array]@[
+            if field.type.type == 'string'
+]@# Deserialize string
+@enforce_read_alignment(4)
+  uint32_t _@(field.name)_len = *(reinterpret_cast<uint32_t *>(*_p));
+  if (*_len < sizeof(uint32_t)) {
+    return false;
   }
-
-  @{
-align = 4
-for field in spec.fields:
-    align, substring = deserialize_field(field, align)
-    print(substring)
-  }@
-  return true;
+  (*_p) += sizeof(uint32_t);
+  (*_len) -= sizeof(uint32_t);
+  _s->@(field.name).assign(_@(field.name)_len - 1, '\0');
+  for (size_t i = 0; i < _@(field.name)_len - 1; ++i) {
+    if (*_len < sizeof(char)) {
+      return false;
+    }
+    _s->@(field.name)[i] = *(reinterpret_cast<char *>(*_p));
+    *_p += sizeof(char);
+    *_len -= sizeof(char);
+  }
+  ++(*_p);
+  --(*_len);
+@[            else
+]@# Deserialize numeric type
+@enforce_read_alignment(get_alignment(field.type.type))
+  if (*_len < sizeof(@(msg_type_to_cpp(field.type.type)))) {
+    return false;
+  }
+  _s->@(field.name) = *(reinterpret_cast<@(msg_type_to_cpp(field.type.type)) *>(*_p));
+  *_p += sizeof(@(msg_type_to_cpp(field.type.type)));
+  *_len -= sizeof(@(msg_type_to_cpp(field.type.type)));
+@[            end if]@[
+        elif field.type.array_size]@[
+            if field.type.type == 'string'
+]@# Deserialize fixed array of strings
+  for (size_t j = 0; j < @(field.type.array_size); j++) {
+@enforce_read_alignment(4, 4)
+    if (*_len < sizeof(uint32_t)) {
+      return false;
+    }
+    uint32_t _@(field.name)_len = *(reinterpret_cast<uint32_t *>(*_p));
+    (*_p) += sizeof(uint32_t);
+    (*_len) -= sizeof(uint32_t);
+    _s->@(field.name)[j].assign(_@(field.name)_len - 1, '\0');
+    for (size_t i = 0; i < _@(field.name)_len - 1; ++i) {
+      if (*_len < sizeof(char)) {
+        return false;
+      }
+      _s->@(field.name)[j][i] = *(reinterpret_cast<char *>(*_p));
+      *_p += sizeof(char);
+      *_len -= sizeof(char);
+    }
+    ++(*_p);
+    --(*_len);
+  }
+@[            else
+]@# Deserialize fixed array of numeric types
+@enforce_read_alignment(get_alignment(field.type.type))
+  for (size_t i = 0; i < @(field.type.array_size); i++) {
+    if (*_len < sizeof(@(msg_type_to_cpp(field.type.type)))) {
+      return false;
+    }
+    _s->@(field.name)[i] = *(reinterpret_cast<@(msg_type_to_cpp(field.type.type)) *>(*_p));
+    *_p += sizeof(@(msg_type_to_cpp(field.type.type)));
+    *_len -= sizeof(@(msg_type_to_cpp(field.type.type)));
+  }
+@[            end if]@[
+        else]@[
+            if field.type.type == 'string'
+]@# Deserialize variable array of strings
+@enforce_read_alignment(4)
+  size_t _@(field.name)_len = *(reinterpret_cast<uint32_t *>(*_p));
+  *_p += sizeof(uint32_t);
+  *_len -= sizeof(uint32_t);
+  if (_s->@(field.name).size() != _@(field.name)_len) {
+    _s->@(field.name).resize(_@(field.name)_len);
+  }
+  for (size_t j = 0; j < _@(field.name)_len; j++) {
+@enforce_read_alignment(4, 4)
+    uint32_t _@(field.name)_len = *(reinterpret_cast<uint32_t *>(*_p));
+    if (*_len < sizeof(uint32_t)) {
+      return false;
+    }
+    (*_p) += sizeof(uint32_t);
+    (*_len) -= sizeof(uint32_t);
+    _s->@(field.name)[j].assign(_@(field.name)_len - 1, '\0');
+    for (size_t i = 0; i < _@(field.name)_len - 1; ++i) {
+      if (*_len < sizeof(char)) {
+        return false;
+      }
+      _s->@(field.name)[j][i] = *(reinterpret_cast<char *>(*_p));
+      *_p += sizeof(char);
+      *_len -= sizeof(char);
+    }
+    ++(*_p);
+    --(*_len);
+  }
+@[            else
+]@# Deserialize variable array of numeric types
+@enforce_read_alignment(4)
+  uint32_t _@(field.name)_len = *(reinterpret_cast<uint32_t *>(*_p));
+  if (*_len < sizeof(uint32_t)) {
+    return false;
+  }
+  *_p += sizeof(uint32_t);
+  (*_len) -= sizeof(uint32_t);
+  if (_s->@(field.name).size() != _@(field.name)_len) {
+    _s->@(field.name).resize(_@(field.name)_len);
+  }
+@enforce_read_alignment(get_alignment(field.type.type))
+  for (size_t i = 0; i < _@(field.name)_len; i++) {
+    if (*_len < sizeof(@(msg_type_to_cpp(field.type.type)))) {
+      return false;
+    }
+    _s->@(field.name)[i] = *(reinterpret_cast<@(msg_type_to_cpp(field.type.type)) *>(*_p));
+    (*_p) += sizeof(@(msg_type_to_cpp(field.type.type)));
+    (*_len) -= sizeof(@(msg_type_to_cpp(field.type.type)));
+  }
+@[            end if]@[
+        end if]@[
+    else]@[
+        if not field.type.is_array
+]@# Deserialize struct
+  if (!@(field.type.pkg_name)::msg::typesupport_freertps_cpp::deserialize_ros_msg(
+      _p, &_s->@(field.name), _len))
+  {
+    return false;
+  }
+@[        elif field.type.array_size
+]@# Deserialize fixed array of structs
+  for (size_t i = 0; i < @(field.type.array_size); i++) {
+    if (!@(field.type.pkg_name)::msg::typesupport_freertps_cpp::deserialize_ros_msg(
+        _p, &_s->@(field.name)[i], _len))
+    {
+      return false;
+    }
+  }
+@[        else
+]@# Deserialize variable array of structs
+@enforce_read_alignment(4)
+  if (*_len < sizeof(uint32_t)) {
+    return false;
+  }
+  uint32_t _@(field.name)_len = *(reinterpret_cast<uint32_t *>(*_p));
+  *_p += sizeof(uint32_t);
+  *_len -= sizeof(uint32_t);
+  if (_s->@(field.name).size() != _@(field.name)_len) {
+    _s->@(field.name).resize(_@(field.name)_len);
+  }
+  for (size_t i = 0; i < _@(field.name)_len; i++) {
+    if (!@(field.type.pkg_name)::msg::typesupport_freertps_cpp::deserialize_ros_msg(
+        _p, &(_s->@(field.name)[i]), _len))
+    {
+      return false;
+    }
+  }
+@[        end if]@[
+    end if]@[
+end for
+]  return true;
 }
 
 
 ROSIDL_TYPESUPPORT_FREERTPS_CPP_EXPORT_@(spec.base_type.pkg_name)
 const char *
 publish__@(spec.base_type.type)(
-  void *untyped_pub,
-  const void *untyped_ros_message)
+  void * untyped_pub,
+  const void * untyped_ros_message)
 {
   (void)untyped_pub;
-  const __ros_msg_type & ros_message = *(const __ros_msg_type *)untyped_ros_message;
-  // TODO memory allocation! does the buffer get passed to this function?
-  // TODO freertps currently only supports fixed-size arrays so sizeof is OK (we think?)
+  const __ros_msg_type * ros_message = (const __ros_msg_type *)untyped_ros_message;
+  // TODO(jacquelinekay) we should instead pass an allocated buffer to this function
   uint32_t _len = sizeof(__ros_msg_type);
   uint8_t * buf = static_cast<uint8_t *>(calloc(_len, sizeof(uint8_t)));
   serialize_ros_msg(ros_message, buf, _len);
 
-  frudp_pub_t *pub = (frudp_pub_t *)untyped_pub;
-  freertps_publish(pub, (uint8_t *)buf, _len);
+  frudp_pub_t * pub = static_cast<frudp_pub_t *>(untyped_pub);
+  freertps_publish(pub, static_cast<uint8_t *>(buf), _len);
   return nullptr;
 }
 
@@ -165,7 +486,7 @@ take__@(spec.base_type.type)(
 {
   if (untyped_ros_message == 0) {
     return "invalid ros message pointer";
-  };
+  }
 
   (void)untyped_topic_reader;
   (void)ignore_local_publications;
@@ -184,12 +505,8 @@ static rosidl_message_type_support_t handle = {
   rosidl_typesupport_freertps_cpp::typesupport_freertps_identifier,
   &message_type_support_callbacks
 };
-
-
 }  // namespace typesupport_freertps_cpp
-
 }  // namespace @(subfolder)
-
 }  // namespace @(spec.base_type.pkg_name)
 
 namespace rosidl_typesupport_freertps_cpp

@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROSIDL_TYPESUPPORT_FREERTPS_CPP_ROSIDL_TYPESUPPORT_FREERTPS_CPP_MESSAGE_TYPE_SUPPORT_H_
-#define ROSIDL_TYPESUPPORT_FREERTPS_CPP_ROSIDL_TYPESUPPORT_FREERTPS_CPP_MESSAGE_TYPE_SUPPORT_H_
-
-#include "rosidl_generator_c/message_type_support.h"
+#ifndef ROSIDL_TYPESUPPORT_FREERTPS_CPP__MESSAGE_TYPE_SUPPORT_H_
+#define ROSIDL_TYPESUPPORT_FREERTPS_CPP__MESSAGE_TYPE_SUPPORT_H_
 
 typedef struct message_type_support_callbacks_t
 {
@@ -35,7 +33,6 @@ typedef struct message_type_support_callbacks_t
     bool ignore_local_publications,
     void * untyped_ros_message,
     bool * taken);
-
 } message_type_support_callbacks_t;
 
-#endif  /* ROSIDL_TYPESUPPORT_FREERTPS_CPP_ROSIDL_TYPESUPPORT_FREERTPS_CPP_MESSAGE_TYPE_SUPPORT_H_ */
+#endif  // ROSIDL_TYPESUPPORT_FREERTPS_CPP__MESSAGE_TYPE_SUPPORT_H_
