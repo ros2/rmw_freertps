@@ -109,7 +109,6 @@ configure_file(
   @ONLY
 )
 list(APPEND _generated_msg_files "${_visibility_control_file}")
-endif()
 
 link_directories(${freertps_LIBRARY_DIRS})
 add_library(${rosidl_generate_interfaces_TARGET}${_target_suffix} SHARED
@@ -162,6 +161,7 @@ add_dependencies(
 )
 
 if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
+  # headers
   ament_export_include_directories(include)
   install(
     FILES ${_generated_msg_files}
@@ -172,7 +172,7 @@ if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
     DESTINATION "include/${PROJECT_NAME}/srv/freertps"
   )
 
-if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
+  # target
   ament_export_libraries(${rosidl_generate_interfaces_TARGET}${_target_suffix})
   install(
     TARGETS ${rosidl_generate_interfaces_TARGET}${_target_suffix}

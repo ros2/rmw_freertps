@@ -95,29 +95,39 @@ def generate_typesupport_freertps_cpp(template_dir, pkg_name, ros_interface_file
     return 0
 
 
+def print_lines(lines, indent):
+    print('\n'.join(' ' * indent + entry for entry in lines))
+
+
 # TODO(jacquelinekay) use bit shifting/& instead of mod/multiplication!!!
-def enforce_alignment(required_alignment, indent=2):
-    print("""{0}if ((_p - _buf) % {1} != 0) {{
-{0}  _p += (static_cast<uint32_t>(floor((_p - _buf) / {1}) + 1)) * {1} - (_p - _buf);
-{0}}}""".format(' ' * indent, required_alignment))
+def enforce_alignment(alignment, indent=2):
+    print_lines([
+        "if ((_p - _buf) % {0} != 0) {{".format(alignment),
+        "  _p += (static_cast<uint32_t>(floor((_p - _buf) /" +
+        " {0}) + 1)) * {0} - (_p - _buf);".format(alignment),
+        "}"], indent)
 
 
 def enforce_read_alignment(required_alignment, indent=2):
-    print("""{0}if ((*_p - initial_p) % {1} != 0) {{
-{0}  uint8_t pad = (static_cast<uint32_t>(
-{0}      floor((*_p - initial_p) / {1})) + 1) * {1} - (*_p - initial_p);
-{0}  if (*_len < pad) {{
-{0}    return false;
-{0}  }}
-{0}  *_p += pad;
-{0}  *_len -= pad;
-{0}}}""".format(' ' * indent, required_alignment))
+    print_lines([
+        "if ((*_p - initial_p) % {0} != 0) {{".format(required_alignment),
+        "  uint8_t pad = (static_cast<uint32_t>(",
+        "      floor((*_p - initial_p) / {0})) + 1) * {0} - (*_p - initial_p);".format(
+            required_alignment),
+        "  if (*_len < pad) {{",
+        "    return false;",
+        "  }}",
+        "  *_p += pad;",
+        "  *_len -= pad;",
+        "}"], indent)
 
 
 def enforce_alignment_buffer_size(required_alignment, indent=2):
-    print("""{0}if (_len % {1} != 0) {{
-{0}  _len += (static_cast<uint32_t>(floor(_len / {1})) + 1) * {1} - _len;
-{0}}}""".format(' ' * indent, required_alignment))
+    print_lines([
+        "if (_len % {0} != 0) {{".format(required_alignment),
+        "  _len += (static_cast<uint32_t>(floor(_len / {0})) + 1) * {0} - _len;".format(
+            required_alignment),
+        "}"], indent)
 
 
 primitive_type_alignment = {}
