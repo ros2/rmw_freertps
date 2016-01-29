@@ -1,4 +1,4 @@
-# Copyright 2014 Open Source Robotics Foundation, Inc.
+# Copyright 2015-2016 Open Source Robotics Foundation, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import os
-import subprocess
 
 from rosidl_cmake import convert_camel_case_to_lower_case_underscore
 from rosidl_cmake import expand_template
@@ -23,100 +23,12 @@ from rosidl_parser import parse_message_file
 from rosidl_parser import parse_service_file
 from rosidl_parser import validate_field_types
 
-
-def generate_dds_freertps_cpp(pkg_name, dds_interface_files, 
-                              deps, output_basepath):
-    include_dirs = [] #dds_interface_base_path]
-    for dep in deps:
-        # only take the first : for separation, as Windows follows with a C:\
-        dep_parts = dep.split(':', 1)
-        assert len(dep_parts) == 2, "The dependency '%s' must contain a double colon" % dep
-        idl_path = dep_parts[1]
-        idl_base_path = os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.normpath(idl_path))))
-        if idl_base_path not in include_dirs:
-            include_dirs.append(idl_base_path)
-    #if 'OSPL_TMPL_PATH' in os.environ:
-    #    include_dirs.append(os.environ['OSPL_TMPL_PATH'])
-
-    print("generate_dds_freertps_cpp:")
-    print("pkg_name: [%s]" % pkg_name)
-    print("output_basepath: [%s]" % output_basepath)
-    print("dds_interface_files:")
-    print(dds_interface_files)
-    #print("dds_interface_base_path: [%s]" % dds_interface_base_path)
-    for idl_file in dds_interface_files:
-        assert os.path.exists(idl_file), 'Could not find IDL file: ' + idl_file
-
-        # get two level of parent folders for idl file
-        folder = os.path.dirname(idl_file)
-        parent_folder = os.path.dirname(folder)
-        output_path = os.path.join(
-            output_basepath,
-            os.path.basename(parent_folder),
-            os.path.basename(folder))
-        try:
-            os.makedirs(output_path)
-        except FileExistsError:
-            pass
-
-        print("  idl_file: [%s]" % idl_file)
-        print("    output_path: [%s]" % output_path)
-
-        '''
-        for include_dir in include_dirs:
-            cmd += ['-I', include_dir]
-        cmd += [
-            '-S',
-            '-l', 'cpp',
-            '-d', output_path,
-            idl_file
-        ]
-        print("cmd: [%s]" % cmd)
-        if os.name == 'nt':
-            cmd[-1:-1] = [
-                '-P',
-                'ROSIDL_TYPESUPPORT_FREERTPS_CPP_PUBLIC_%s,%s' %
-                (pkg_name, '%s/msg/dds_freertps/visibility_control.h' % pkg_name)]
-        subprocess.check_call(cmd)
-
-        # modify generated code to compile with Visual Studio 2015
-        msg_name = os.path.splitext(os.path.basename(idl_file))[0]
-        dcps_impl_h_filename = os.path.join(output_path, '%sDcps_impl.h' % msg_name)
-        _modify(dcps_impl_h_filename, msg_name, _copy_constructor_and_assignment_operator)
-        '''
-
-    return 0
+from rosidl_generator_cpp import MSG_TYPE_TO_CPP
 
 
-def _modify(filename, msg_name, callback):
-    with open(filename, 'r') as h:
-        lines = h.read().split('\n')
-    modified = callback(lines, msg_name)
-    if modified:
-        with open(filename, 'w') as h:
-            h.write('\n'.join(lines))
-
-
-def _copy_constructor_and_assignment_operator(lines, msg_name):
-    for i, line in enumerate(lines):
-        if line.strip() == 'public:':
-            new_lines = [
-                '%sTypeSupportFactory(const %sTypeSupportFactory & o) = delete;' %
-                (msg_name, msg_name),
-                '%sTypeSupportFactory & operator=(const %sTypeSupportFactory & o) = delete;' %
-                (msg_name, msg_name),
-            ]
-            lines[i + 1:i + 1] = [' ' * 16 + l for l in new_lines]
-            return lines
-    assert False, 'Failed to find insertion point'
-
-
-def generate_typesupport_freertps_cpp(args):
-    print("freertps generate_typesupport_freertps_cpp() args:")
-    print(args)
-    print("==end==")
-    template_dir = args['template_dir']
+def generate_typesupport_freertps_cpp(template_dir, pkg_name, ros_interface_files,
+                                      ros_interface_dependencies, target_dependencies,
+                                      additional_files, output_dir):
     mapping_msgs = {
         os.path.join(template_dir, 'msg__type_support.hpp.template'): '%s__type_support.hpp',
         os.path.join(template_dir, 'msg__type_support.cpp.template'): '%s__type_support.cpp',
@@ -133,19 +45,23 @@ def generate_typesupport_freertps_cpp(args):
     for template_file in mapping_srvs.keys():
         assert os.path.exists(template_file), 'Could not find template: ' + template_file
 
-    pkg_name = args['package_name']
     known_msg_types = extract_message_types(
-        pkg_name, args['ros_interface_files'], args.get('ros_interface_dependencies', []))
+        pkg_name, ros_interface_files, ros_interface_dependencies)
 
     functions = {
         'get_header_filename_from_msg_name': convert_camel_case_to_lower_case_underscore,
+        'enforce_alignment': enforce_alignment,
+        'enforce_read_alignment': enforce_read_alignment,
+        'enforce_alignment_buffer_size': enforce_alignment_buffer_size,
+        'get_alignment': get_alignment,
+        'msg_type_to_cpp': msg_type_to_cpp,
     }
     # generate_dds_freertps_cpp() and therefore the make target depend on the additional files
     # therefore they must be listed here even if the generated type support files are independent
     latest_target_timestamp = get_newest_modification_time(
-        args['target_dependencies'] + args.get('additional_files', []))
+        target_dependencies + additional_files)
 
-    for idl_file in args['ros_interface_files']:
+    for idl_file in ros_interface_files:
         extension = os.path.splitext(idl_file)[1]
         if extension == '.msg':
             spec = parse_message_file(pkg_name, idl_file)
@@ -153,7 +69,7 @@ def generate_typesupport_freertps_cpp(args):
             subfolder = os.path.basename(os.path.dirname(idl_file))
             for template_file, generated_filename in mapping_msgs.items():
                 generated_file = os.path.join(
-                    args['output_dir'], subfolder, 'dds_freertps', generated_filename %
+                    output_dir, subfolder, 'freertps', generated_filename %
                     convert_camel_case_to_lower_case_underscore(spec.base_type.type))
 
                 data = {'spec': spec, 'subfolder': subfolder}
@@ -167,7 +83,7 @@ def generate_typesupport_freertps_cpp(args):
             validate_field_types(spec, known_msg_types)
             for template_file, generated_filename in mapping_srvs.items():
                 generated_file = os.path.join(
-                    args['output_dir'], 'srv', 'dds_freertps', generated_filename %
+                    output_dir, 'srv', 'freertps', generated_filename %
                     convert_camel_case_to_lower_case_underscore(spec.srv_name))
 
                 data = {'spec': spec}
@@ -177,3 +93,82 @@ def generate_typesupport_freertps_cpp(args):
                     minimum_timestamp=latest_target_timestamp)
 
     return 0
+
+
+def print_lines(lines, indent):
+    print('\n'.join(' ' * indent + entry for entry in lines))
+
+
+# TODO(jacquelinekay) use bit shifting/& instead of mod/multiplication!!!
+def enforce_alignment(alignment, indent=2):
+    print_lines([
+        "if ((_p - _buf) % {0} != 0) {{".format(alignment),
+        "  _p += (static_cast<uint32_t>(floor((_p - _buf) /" +
+        " {0}) + 1)) * {0} - (_p - _buf);".format(alignment),
+        "}"], indent)
+
+
+def enforce_read_alignment(required_alignment, indent=2):
+    print_lines([
+        "if ((*_p - initial_p) % {0} != 0) {{".format(required_alignment),
+        "  uint8_t pad = (static_cast<uint32_t>(",
+        "      floor((*_p - initial_p) / {0})) + 1) * {0} - (*_p - initial_p);".format(
+            required_alignment),
+        "  if (*_len < pad) {{",
+        "    return false;",
+        "  }}",
+        "  *_p += pad;",
+        "  *_len -= pad;",
+        "}"], indent)
+
+
+def enforce_alignment_buffer_size(required_alignment, indent=2):
+    print_lines([
+        "if (_len % {0} != 0) {{".format(required_alignment),
+        "  _len += (static_cast<uint32_t>(floor(_len / {0})) + 1) * {0} - _len;".format(
+            required_alignment),
+        "}"], indent)
+
+
+primitive_type_alignment = {}
+primitive_type_alignment['bool'] = 1
+primitive_type_alignment['byte'] = 1
+primitive_type_alignment['uint8'] = 1
+primitive_type_alignment['char'] = 1
+primitive_type_alignment['int8'] = 1
+primitive_type_alignment['uint16'] = 2
+primitive_type_alignment['int16'] = 2
+primitive_type_alignment['uint32'] = 4
+primitive_type_alignment['int32'] = 4
+primitive_type_alignment['uint64'] = 8
+primitive_type_alignment['int64'] = 8
+primitive_type_alignment['float32'] = 4
+primitive_type_alignment['float64'] = 8
+
+
+def get_alignment(field_str):
+    return primitive_type_alignment[field_str]
+
+
+def msg_type_to_cpp(msg_type):
+    return MSG_TYPE_TO_CPP[msg_type]
+
+
+def uncamelcase(camelcase):
+    lower = ''
+    upper_run_len = 0
+    for idx in range(0, len(camelcase)):
+        if (camelcase[idx].isupper()):
+            next_lower = idx < len(camelcase) - 1 and camelcase[idx + 1].islower()
+            if (idx > 0 and upper_run_len == 0) or (idx > 1 and next_lower):
+                lower += '_'
+            lower += camelcase[idx].lower()
+            upper_run_len += 1
+        else:
+            lower += camelcase[idx]
+            upper_run_len = 0
+    return lower
+
+
+def print_uncamelcase(c):
+    print('%s -> %s' % (c, uncamelcase(c)))

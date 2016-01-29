@@ -1,13 +1,27 @@
 #!/usr/bin/env python3
 
 import argparse
+
 import os
 import sys
 
+try:
+    from rosidl_typesupport_freertps_cpp import generate_typesupport_freertps_cpp
+except ImportError:
+    # modifying sys.path and importing the Python package with the same
+    # name as this script does not work on Windows
+    rosidl_typesupport_freertps_cpp_root = os.path.dirname(os.path.dirname(__file__))
+    rosidl_typesupport_freertps_cpp_module = os.path.join(
+        rosidl_typesupport_freertps_cpp_root, 'rosidl_typesupport_freertps_cpp', '__init__.py')
+    if not os.path.exists(rosidl_typesupport_freertps_cpp_module):
+        raise
+    from importlib.machinery import SourceFileLoader
+
+    loader = SourceFileLoader('rosidl_typesupport_freertps_cpp', rosidl_typesupport_freertps_cpp_module)
+    rosidl_typesupport_freertps_cpp = loader.load_module()
+    generate_typesupport_freertps_cpp = rosidl_typesupport_freertps_cpp.generate_typesupport_freertps_cpp
+
 from rosidl_cmake import read_generator_arguments
-from rosidl_parser import UnknownMessageType
-from rosidl_typesupport_freertps_cpp import generate_dds_freertps_cpp
-from rosidl_typesupport_freertps_cpp import generate_typesupport_freertps_cpp
 
 
 def is_valid_file(parser, file_name):
@@ -27,29 +41,14 @@ def main(argv=sys.argv[1:]):
         '--generator-arguments-file',
         required=True,
         help='The location of the file containing the generator arguments')
-    #parser.add_argument(
-    #    '--dds-interface-base-path',
-    #    required=True,
-    #    help='The base location of the DDS interface files')
     args = parser.parse_args(argv)
 
     generator_args = read_generator_arguments(args.generator_arguments_file)
-
-    try:
-        rc = generate_typesupport_freertps_cpp(generator_args)
-    except UnknownMessageType as e:
-        print(str(e), file=sys.stderr)
-        return 1
-    if rc:
-        return rc
-    return generate_dds_freertps_cpp(
-        generator_args['package_name'],
-        generator_args.get('additional_files', []),
-        #args.dds_interface_base_path,
-        generator_args.get('ros_interface_dependencies', []),
-        generator_args['output_dir']
-    )
-
+    return generate_typesupport_freertps_cpp(
+        generator_args['template_dir'], generator_args['package_name'],
+        generator_args['ros_interface_files'], generator_args.get('ros_interface_dependencies', []),
+        generator_args['target_dependencies'], generator_args.get('additional_files', []),
+        generator_args['output_dir'])
 
 if __name__ == '__main__':
     sys.exit(main())
