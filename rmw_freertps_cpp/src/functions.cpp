@@ -27,8 +27,6 @@
 #include "rmw/impl/cpp/macros.hpp"
 #include "rmw/rmw.h"
 
-#include "rosidl_generator_c/message_type_support.h"
-#include "rosidl_generator_c/service_type_support.h"
 #include "rosidl_typesupport_freertps_cpp/identifier.hpp"
 #include "rosidl_typesupport_freertps_cpp/message_type_support.h"
 #include "rosidl_typesupport_freertps_cpp/service_type_support.h"

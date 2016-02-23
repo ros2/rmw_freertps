@@ -23,7 +23,6 @@ extern "C"
 #include "freertps/freertps.h"
 }
 
-#include "rosidl_generator_c/message_type_support.h"
 // this is defined in the rosidl_typesupport_freertps_cpp package and
 // is in the include/rosidl_typesupport_freertps_cpp/impl folder
 #include "rosidl_generator_cpp/message_type_support.hpp"
